@@ -1,0 +1,36 @@
+services:
+  oblivion-damage-calculator:
+    container_name: $CONTAINER_NAME
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - '${PORT}:3000'
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    restart: always
+    profiles:
+      - production
+
+  oblivion-damage-calculator-dev:
+    container_name: $CONTAINER_NAME
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - PORT=3000
+      - WATCHPACK_POLLING=true
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - '${PORT}:3000'
+    restart: unless-stopped
+    profiles:
+      - development
+
+volumes:
+  node_modules:
