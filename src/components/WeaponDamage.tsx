@@ -25,6 +25,7 @@ import {
   getBowPreset,
   getArrowPreset,
   subtypeIsTwoHanded,
+  materialBypassesResistance,
   type WeaponMaterial,
   type WeaponSubtype,
 } from '@/utils/weaponPresets';
@@ -235,7 +236,7 @@ export default function WeaponDamage({
       label: `Weapon Resistance${isSilverDaedricOrEnchanted ? ' (bypassed)' : ''}`,
       value: result.opponentWeaponResistance,
       tooltip:
-        'Silver/Daedric/Enchanted weapons always bypass resistance. Otherwise: (100 − NormalWeaponResistance%) / 100',
+        'Silver, Daedric, and enchanted weapons bypass Resist Normal Weapons (= 1). Otherwise: (100 − NormalWeaponResistance%) / 100',
     },
     {
       label: `Pre-difficulty Damage`,
@@ -333,7 +334,8 @@ export default function WeaponDamage({
               </div>
 
               {meleeSummary && (
-                <div className="flex flex-col justify-end pb-0.5">
+                <div className="flex flex-col">
+                  <div className="mb-1 text-xs text-gray-500 opacity-0 select-none">_</div>
                   <span className="text-xs font-semibold text-yellow-300">{meleeSummary.label}</span>
                   <span className="text-xs text-gray-500">
                     {meleeSummary.detail}
@@ -390,7 +392,8 @@ export default function WeaponDamage({
                 </FormControl>
               </div>
 
-              <div className="flex flex-col justify-end pb-0.5">
+              <div className="flex flex-col">
+                <div className="mb-1 text-xs text-gray-500 opacity-0 select-none">_</div>
                 <span className="text-xs font-semibold text-yellow-300">{bowSummary.label}</span>
                 <span className="text-xs text-gray-500">{bowSummary.detail}</span>
               </div>
@@ -623,7 +626,7 @@ export default function WeaponDamage({
                 onChange={setNormalWeaponResistance}
                 showSlider={false}
                 suffix="%"
-                tooltip="Opponent's Resist Normal Weapons %. Has no effect for silver, Daedric, or enchanted weapons."
+                tooltip="Opponent's Resist Normal Weapons %. Has no effect when Bypasses Resistance is enabled."
               />
               <FormControlLabel
                 control={
@@ -636,13 +639,20 @@ export default function WeaponDamage({
                 }
                 label={
                   <Tooltip
-                    title="Silver, Daedric, and enchanted weapons bypass Resist Normal Weapons entirely (resistance = 1)"
+                    title="Silver, Daedric, and enchanted weapons bypass Resist Normal Weapons. Enable for any enchanted weapon regardless of material."
                     arrow
                   >
-                    <span className="cursor-help text-xs text-gray-300">Silver / Daedric / Enchanted</span>
+                    <span className="cursor-help text-xs text-gray-300">Bypasses Resistance</span>
                   </Tooltip>
                 }
               />
+              {presetMaterial && (
+                <span className="text-xs text-gray-600">
+                  {materialBypassesResistance(presetMaterial as WeaponMaterial)
+                    ? `${presetMaterial} bypasses resistance`
+                    : `${presetMaterial} does not bypass resistance`}
+                </span>
+              )}
             </div>
           </div>
         )}
