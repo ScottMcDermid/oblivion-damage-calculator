@@ -2,7 +2,12 @@
 
 import React, { useMemo, useState } from 'react';
 import {
+  Divider,
+  FormControl,
   FormControlLabel,
+  ListSubheader,
+  MenuItem,
+  Select,
   Switch,
   ToggleButton,
   ToggleButtonGroup,
@@ -12,10 +17,17 @@ import { GiCrossedSwords, GiPocketBow, GiSwordman } from 'react-icons/gi';
 
 import StatInput from '@/components/StatInput';
 import ResultDisplay from '@/components/ResultDisplay';
+import { calcWeaponDamage, type WeaponType } from '@/utils/damageFormulas';
 import {
-  calcWeaponDamage,
-  type WeaponType,
-} from '@/utils/damageFormulas';
+  MATERIALS,
+  BLADE_SUBTYPES,
+  BLUNT_SUBTYPES,
+  getPreset,
+  getBowPreset,
+  getArrowPreset,
+  type WeaponMaterial,
+  type WeaponSubtype,
+} from '@/utils/weaponPresets';
 
 const WEAPON_TYPES: WeaponType[] = ['Blade', 'Blunt', 'Bow'];
 
@@ -33,36 +45,101 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
+const DEFAULT_BLADE_SUBTYPE: WeaponSubtype = 'Longsword';
+const DEFAULT_BLUNT_SUBTYPE: WeaponSubtype = 'Mace';
+const DEFAULT_MATERIAL: WeaponMaterial = 'Iron';
+
 export default function WeaponDamage() {
-  // Attacker
+  // ── Weapon type ──
   const [weaponType, setWeaponType] = useState<WeaponType>('Blade');
-  const [baseWeaponDamage, setBaseWeaponDamage] = useState(15);
-  const [baseArrowDamage, setBaseArrowDamage] = useState(0);
+
+  // ── Melee preset state ──
+  const [presetSubtype, setPresetSubtype] = useState<WeaponSubtype | ''>(DEFAULT_BLADE_SUBTYPE);
+  const [presetMaterial, setPresetMaterial] = useState<WeaponMaterial | ''>(DEFAULT_MATERIAL);
+
+  // ── Bow/arrow preset state ──
+  const [presetBowMaterial, setPresetBowMaterial] = useState<WeaponMaterial>(DEFAULT_MATERIAL);
+  const [presetArrowMaterial, setPresetArrowMaterial] = useState<WeaponMaterial>(DEFAULT_MATERIAL);
+
+  // ── Weapon stats ──
+  const [baseWeaponDamage, setBaseWeaponDamage] = useState(() => {
+    const p = getPreset(DEFAULT_MATERIAL, DEFAULT_BLADE_SUBTYPE);
+    return p?.baseDamage ?? 10;
+  });
+  const [baseArrowDamage, setBaseArrowDamage] = useState(() => getArrowPreset(DEFAULT_MATERIAL).baseDamage);
+  const [weaponHealth, setWeaponHealth] = useState(() => {
+    const p = getPreset(DEFAULT_MATERIAL, DEFAULT_BLADE_SUBTYPE);
+    return p?.baseHealth ?? 140;
+  });
+  const [baseWeaponHealth, setBaseWeaponHealth] = useState(() => {
+    const p = getPreset(DEFAULT_MATERIAL, DEFAULT_BLADE_SUBTYPE);
+    return p?.baseHealth ?? 140;
+  });
+
+  // ── Attacker stats ──
   const [attribute, setAttribute] = useState(50);
   const [skill, setSkill] = useState(25);
   const [luck, setLuck] = useState(50);
-  const [weaponHealth, setWeaponHealth] = useState(100);
-  const [baseWeaponHealth, setBaseWeaponHealth] = useState(100);
   const [currentFatigue, setCurrentFatigue] = useState(200);
   const [maxFatigue, setMaxFatigue] = useState(200);
 
-  // Attack modifiers
+  // ── Attack modifiers ──
   const [isSneaking, setIsSneaking] = useState(false);
   const [sneakSkill, setSneakSkill] = useState(25);
   const [isPowerAttack, setIsPowerAttack] = useState(false);
   const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
 
-  // Opponent
+  // ── Opponent ──
   const [hasMasterSneakPerk, setHasMasterSneakPerk] = useState(false);
   const [combinedArmorRating, setCombinedArmorRating] = useState(0);
   const [normalWeaponResistance, setNormalWeaponResistance] = useState(0);
   const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useState(false);
 
+  // ── Preset application helpers ──
+
+  const applyMeleePreset = (subtype: WeaponSubtype | '', material: WeaponMaterial | '') => {
+    setPresetSubtype(subtype);
+    setPresetMaterial(material);
+    if (!subtype || !material) return;
+    const p = getPreset(material, subtype);
+    if (!p) return;
+    setBaseWeaponDamage(p.baseDamage);
+    setBaseWeaponHealth(p.baseHealth);
+    setWeaponHealth(p.baseHealth);
+    setWeaponType(p.weaponType);
+    setIsSilverDaedricOrEnchanted(p.bypassesResistance);
+  };
+
+  const applyBowPreset = (bowMat: WeaponMaterial, arrowMat: WeaponMaterial) => {
+    const bow = getBowPreset(bowMat);
+    const arrow = getArrowPreset(arrowMat);
+    setBaseWeaponDamage(bow.baseDamage);
+    setBaseWeaponHealth(bow.baseHealth);
+    setWeaponHealth(bow.baseHealth);
+    setBaseArrowDamage(arrow.baseDamage);
+  };
+
+  // ── Weapon type toggle handler — resets presets on switch ──
+  const handleWeaponTypeChange = (newType: WeaponType) => {
+    setWeaponType(newType);
+    if (newType === 'Bow') {
+      setPresetBowMaterial(DEFAULT_MATERIAL);
+      setPresetArrowMaterial(DEFAULT_MATERIAL);
+      applyBowPreset(DEFAULT_MATERIAL, DEFAULT_MATERIAL);
+      setIsSilverDaedricOrEnchanted(false);
+    } else {
+      const defaultSubtype = newType === 'Blunt' ? DEFAULT_BLUNT_SUBTYPE : DEFAULT_BLADE_SUBTYPE;
+      setPresetSubtype(defaultSubtype);
+      setPresetMaterial(DEFAULT_MATERIAL);
+      applyMeleePreset(defaultSubtype, DEFAULT_MATERIAL);
+    }
+  };
+
   const isBow = weaponType === 'Bow';
   const attributeLabel = isBow ? 'Agility' : 'Strength';
-  const skillLabel = weaponType === 'Blade' ? 'Blade Skill' : weaponType === 'Blunt' ? 'Blunt Skill' : 'Marksman Skill';
+  const skillLabel =
+    weaponType === 'Blade' ? 'Blade Skill' : weaponType === 'Blunt' ? 'Blunt Skill' : 'Marksman Skill';
 
-  // For bows, base damage is bow + arrow combined
   const effectiveBaseDamage = isBow ? baseWeaponDamage + baseArrowDamage : baseWeaponDamage;
 
   const result = useMemo(
@@ -103,7 +180,8 @@ export default function WeaponDamage() {
     {
       label: 'Weapon Rating (WR)',
       value: result.weaponRating,
-      tooltip: 'BaseDamage × (150 + Attribute) × (40 + ModifiedSkill × 3) × (WeaponHealth/MaxHealth + 1) / 160000',
+      tooltip:
+        'BaseDamage × (150 + Attribute) × (40 + ModifiedSkill × 3) × (WeaponHealth/MaxHealth + 1) / 160000',
     },
     {
       label: 'Fatigue Modifier',
@@ -130,14 +208,16 @@ export default function WeaponDamage() {
     {
       label: 'Opponent Armor Rating',
       value: result.opponentArmorRating,
-      tooltip: hasMasterSneakPerk && isSneaking
-        ? 'Master Sneak perk bypasses armor (= 1)'
-        : '(100 − CombinedArmorRating) / 100, AR capped at 85',
+      tooltip:
+        hasMasterSneakPerk && isSneaking
+          ? 'Master Sneak perk bypasses armor (= 1)'
+          : '(100 − CombinedArmorRating) / 100, AR capped at 85',
     },
     {
       label: `Weapon Resistance${isSilverDaedricOrEnchanted ? ' (bypassed)' : ''}`,
       value: result.opponentWeaponResistance,
-      tooltip: 'Silver/Daedric/Enchanted weapons always bypass resistance. Otherwise: (100 − NormalWeaponResistance%) / 100',
+      tooltip:
+        'Silver/Daedric/Enchanted weapons always bypass resistance. Otherwise: (100 − NormalWeaponResistance%) / 100',
     },
     {
       label: 'Final Damage',
@@ -146,19 +226,41 @@ export default function WeaponDamage() {
     },
   ];
 
+  // ── Preset summary helpers ──
+
+  const meleeSummary = (() => {
+    if (!presetSubtype || !presetMaterial) return null;
+    const p = getPreset(presetMaterial, presetSubtype);
+    if (!p) return null;
+    return {
+      label: `${presetMaterial} ${presetSubtype}`,
+      detail: `Base damage: ${p.baseDamage} · Max condition: ${p.baseHealth}`,
+      warn: p.bypassesResistance,
+    };
+  })();
+
+  const bowSummary = (() => {
+    const bow = getBowPreset(presetBowMaterial);
+    const arrow = getArrowPreset(presetArrowMaterial);
+    return {
+      label: `${presetBowMaterial} Bow + ${presetArrowMaterial} Arrow`,
+      detail: `Base: ${bow.baseDamage} + ${arrow.baseDamage} = ${bow.baseDamage + arrow.baseDamage} combined · Bow max condition: ${bow.baseHealth}`,
+    };
+  })();
+
   return (
     <div className="flex flex-col gap-0 lg:flex-row lg:gap-8">
       {/* ── Inputs ── */}
       <div className="min-w-0 flex-1 space-y-1">
 
-        {/* Weapon type */}
-        <SectionHeading>Weapon</SectionHeading>
+        {/* ── Weapon type toggle ── */}
+        <SectionHeading>Weapon Type</SectionHeading>
         <div className="mb-4">
           <ToggleButtonGroup
             exclusive
             size="small"
             value={weaponType}
-            onChange={(_, v) => { if (v) setWeaponType(v); }}
+            onChange={(_, v) => { if (v) handleWeaponTypeChange(v); }}
           >
             {WEAPON_TYPES.map((t) => (
               <ToggleButton key={t} value={t} sx={{ gap: 0.75, px: 1.5, fontSize: '0.75rem' }}>
@@ -169,12 +271,138 @@ export default function WeaponDamage() {
           </ToggleButtonGroup>
         </div>
 
+        {/* ── Preset selector — melee ── */}
+        {!isBow && (
+          <>
+            <SectionHeading>Weapon Preset</SectionHeading>
+            <div className="flex flex-wrap items-start gap-3">
+              <div>
+                <div className="mb-1 text-xs text-gray-500">Weapon</div>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <Select
+                    value={presetSubtype}
+                    displayEmpty
+                    onChange={(e) => applyMeleePreset(e.target.value as WeaponSubtype | '', presetMaterial)}
+                    sx={{ fontSize: '0.8rem' }}
+                  >
+                    <MenuItem value="" sx={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'text.secondary' }}>
+                      Custom
+                    </MenuItem>
+                    <Divider />
+                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem' }}>Blade</ListSubheader>
+                    {BLADE_SUBTYPES.map((s) => (
+                      <MenuItem key={s} value={s} sx={{ fontSize: '0.8rem' }}>{s}</MenuItem>
+                    ))}
+                    <Divider />
+                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem' }}>Blunt</ListSubheader>
+                    {BLUNT_SUBTYPES.map((s) => (
+                      <MenuItem key={s} value={s} sx={{ fontSize: '0.8rem' }}>{s}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+
+              <div>
+                <div className="mb-1 text-xs text-gray-500">Material</div>
+                <FormControl size="small" sx={{ minWidth: 130 }}>
+                  <Select
+                    value={presetMaterial}
+                    displayEmpty
+                    onChange={(e) => applyMeleePreset(presetSubtype, e.target.value as WeaponMaterial | '')}
+                    sx={{ fontSize: '0.8rem' }}
+                  >
+                    <MenuItem value="" sx={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'text.secondary' }}>
+                      Custom
+                    </MenuItem>
+                    <Divider />
+                    {MATERIALS.map((m) => (
+                      <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+
+              {meleeSummary && (
+                <div className="flex flex-col justify-end pb-0.5">
+                  <span className="text-xs font-semibold text-yellow-300">{meleeSummary.label}</span>
+                  <span className="text-xs text-gray-500">
+                    {meleeSummary.detail}
+                    {meleeSummary.warn && (
+                      <span className="ml-1 text-amber-400">· bypasses resist</span>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── Preset selector — bow + arrow ── */}
+        {isBow && (
+          <>
+            <SectionHeading>Bow &amp; Arrow Preset</SectionHeading>
+            <div className="flex flex-wrap items-start gap-3">
+              <div>
+                <div className="mb-1 text-xs text-gray-500">Bow</div>
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                  <Select
+                    value={presetBowMaterial}
+                    onChange={(e) => {
+                      const mat = e.target.value as WeaponMaterial;
+                      setPresetBowMaterial(mat);
+                      applyBowPreset(mat, presetArrowMaterial);
+                    }}
+                    sx={{ fontSize: '0.8rem' }}
+                  >
+                    {MATERIALS.map((m) => (
+                      <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Bow</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+
+              <div>
+                <div className="mb-1 text-xs text-gray-500">Arrow</div>
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                  <Select
+                    value={presetArrowMaterial}
+                    onChange={(e) => {
+                      const mat = e.target.value as WeaponMaterial;
+                      setPresetArrowMaterial(mat);
+                      applyBowPreset(presetBowMaterial, mat);
+                    }}
+                    sx={{ fontSize: '0.8rem' }}
+                  >
+                    {MATERIALS.map((m) => (
+                      <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Arrow</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+
+              <div className="flex flex-col justify-end pb-0.5">
+                <span className="text-xs font-semibold text-yellow-300">{bowSummary.label}</span>
+                <span className="text-xs text-gray-500">{bowSummary.detail}</span>
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-gray-600">
+              All bows bypass Resist Normal Weapons regardless of material.
+            </p>
+          </>
+        )}
+
+        {/* ── Weapon stats ── */}
+        <SectionHeading>Weapon</SectionHeading>
+
         <StatInput
           label={isBow ? 'Base Bow Damage' : 'Base Weapon Damage'}
           value={baseWeaponDamage}
           min={0}
           max={200}
-          onChange={setBaseWeaponDamage}
+          onChange={(v) => {
+            setBaseWeaponDamage(v);
+            if (!isBow) { setPresetSubtype(''); setPresetMaterial(''); }
+          }}
           showSlider={false}
           tooltip="The damage value shown on the UESP wiki for this weapon"
         />
@@ -205,7 +433,10 @@ export default function WeaponDamage() {
           value={baseWeaponHealth}
           min={1}
           max={9999}
-          onChange={setBaseWeaponHealth}
+          onChange={(v) => {
+            setBaseWeaponHealth(v);
+            if (!isBow) { setPresetSubtype(''); setPresetMaterial(''); }
+          }}
           showSlider={false}
           tooltip="Maximum (base) weapon health. Ratio = WeaponHealth / BaseWeaponHealth"
         />
@@ -218,7 +449,11 @@ export default function WeaponDamage() {
           min={0}
           max={100}
           onChange={setAttribute}
-          tooltip={isBow ? 'Agility is the governing attribute for bows' : 'Strength is the governing attribute for melee weapons'}
+          tooltip={
+            isBow
+              ? 'Agility is the governing attribute for bows'
+              : 'Strength is the governing attribute for melee weapons'
+          }
         />
         <StatInput
           label={skillLabel}
@@ -287,9 +522,7 @@ export default function WeaponDamage() {
             <div className="mb-2 text-xs text-gray-500">
               Sneak attack multiplier (only highest of sneak/power attack applies):
               <span className="ml-2 font-semibold text-gray-300">
-                {isBow
-                  ? sneakSkill >= 25 ? '3×' : '2×'
-                  : sneakSkill >= 25 ? '6×' : '4×'}
+                {isBow ? (sneakSkill >= 25 ? '3×' : '2×') : sneakSkill >= 25 ? '6×' : '4×'}
               </span>
             </div>
             <StatInput
@@ -326,9 +559,10 @@ export default function WeaponDamage() {
 
         {isSneaking && isPowerAttack && (
           <div className="rounded border border-amber-800/50 bg-amber-900/10 px-3 py-2 text-xs text-amber-400">
-            Note: only the higher multiplier applies — a sneak power attack uses only the sneak multiplier
-            ({isBow ? (sneakSkill >= 25 ? '3×' : '2×') : (sneakSkill >= 25 ? '6×' : '4×')}) or the power
-            attack multiplier ({powerAttackType === 'standing' ? '3×' : '2.5×'}), whichever is greater.
+            Note: only the higher multiplier applies — a sneak power attack uses only the sneak
+            multiplier ({isBow ? (sneakSkill >= 25 ? '3×' : '2×') : sneakSkill >= 25 ? '6×' : '4×'})
+            or the power attack multiplier ({powerAttackType === 'standing' ? '3×' : '2.5×'}),
+            whichever is greater.
           </div>
         )}
 
@@ -354,42 +588,50 @@ export default function WeaponDamage() {
               />
             }
             label={
-              <Tooltip title="Attacker has Master (100) Sneak perk — opponent armor rating becomes 1 when sneaking" arrow>
+              <Tooltip
+                title="Attacker has Master (100) Sneak perk — opponent armor rating becomes 1 when sneaking"
+                arrow
+              >
                 <span className="cursor-help text-xs text-gray-300">Attacker has Master Sneak perk</span>
               </Tooltip>
             }
           />
         </div>
 
-        <div className="mt-2 space-y-1">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-            <StatInput
-              label="Normal Weapon Resistance"
-              value={normalWeaponResistance}
-              min={0}
-              max={100}
-              onChange={setNormalWeaponResistance}
-              showSlider={false}
-              suffix="%"
-              tooltip="Opponent's Resist Normal Weapons %. Has no effect for silver, Daedric, or enchanted weapons."
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  size="small"
-                  checked={isSilverDaedricOrEnchanted}
-                  onChange={(e) => setIsSilverDaedricOrEnchanted(e.target.checked)}
-                  color="secondary"
-                />
-              }
-              label={
-                <Tooltip title="Silver, Daedric, and enchanted weapons bypass Resist Normal Weapons entirely (resistance = 1)" arrow>
-                  <span className="cursor-help text-xs text-gray-300">Silver / Daedric / Enchanted</span>
-                </Tooltip>
-              }
-            />
+        {!isBow && (
+          <div className="mt-2 space-y-1">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+              <StatInput
+                label="Normal Weapon Resistance"
+                value={normalWeaponResistance}
+                min={0}
+                max={100}
+                onChange={setNormalWeaponResistance}
+                showSlider={false}
+                suffix="%"
+                tooltip="Opponent's Resist Normal Weapons %. Has no effect for silver, Daedric, or enchanted weapons."
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={isSilverDaedricOrEnchanted}
+                    onChange={(e) => setIsSilverDaedricOrEnchanted(e.target.checked)}
+                    color="secondary"
+                  />
+                }
+                label={
+                  <Tooltip
+                    title="Silver, Daedric, and enchanted weapons bypass Resist Normal Weapons entirely (resistance = 1)"
+                    arrow
+                  >
+                    <span className="cursor-help text-xs text-gray-300">Silver / Daedric / Enchanted</span>
+                  </Tooltip>
+                }
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ── Result ── */}
@@ -401,7 +643,8 @@ export default function WeaponDamage() {
             breakdown={breakdown}
           />
           <div className="mt-3 text-xs text-gray-600">
-            Enchantment damage and poison effects are not included here — they are treated as spells and applied separately.
+            Enchantment damage and poison effects are not included here — they are treated as spells
+            and applied separately.
           </div>
         </div>
       </div>
