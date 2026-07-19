@@ -13,7 +13,9 @@ import {
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { GiCrossedSwords, GiFist, GiPocketBow, GiSwordman } from 'react-icons/gi';
+import { GiFist, GiSpikedMace } from 'react-icons/gi';
+import { TbArcheryArrow } from 'react-icons/tb';
+import { LuSword } from 'react-icons/lu';
 
 import theme from '@/app/theme';
 import WeaponDamage from '@/components/WeaponDamage';
@@ -23,9 +25,9 @@ import { type WeaponType } from '@/utils/damageFormulas';
 type ActiveTab = 'blade' | 'blunt' | 'bow' | 'h2h';
 
 const TABS: { id: ActiveTab; label: string; Icon: React.ElementType }[] = [
-  { id: 'blade', label: 'Blade',        Icon: GiCrossedSwords },
-  { id: 'blunt', label: 'Blunt',        Icon: GiSwordman },
-  { id: 'bow',   label: 'Bow',          Icon: GiPocketBow },
+  { id: 'blade', label: 'Blade',        Icon: LuSword },
+  { id: 'blunt', label: 'Blunt',        Icon: GiSpikedMace },
+  { id: 'bow',   label: 'Bow',          Icon: TbArcheryArrow },
   { id: 'h2h',   label: 'Hand to Hand', Icon: GiFist },
 ];
 
