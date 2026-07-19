@@ -21,7 +21,12 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function HandToHandDamage() {
+interface HandToHandDamageProps {
+  isRemastered: boolean;
+  difficultyMultiplier: number;
+}
+
+export default function HandToHandDamage({ isRemastered, difficultyMultiplier }: HandToHandDamageProps) {
   const [strength, setStrength] = useState(50);
   const [skill, setSkill] = useState(25);
   const [luck, setLuck] = useState(50);
@@ -30,40 +35,60 @@ export default function HandToHandDamage() {
   const [isPowerAttack, setIsPowerAttack] = useState(false);
   const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
 
-  const result = useMemo(
+  const rawResult = useMemo(
     () =>
       calcHandToHandDamage({
         strength,
         skill,
         luck,
-        currentFatigue,
-        maxFatigue: Math.max(1, maxFatigue),
+        // Remastered: fatigue doesn't affect damage
+        currentFatigue: isRemastered ? 1 : currentFatigue,
+        maxFatigue: isRemastered ? 1 : Math.max(1, maxFatigue),
         isPowerAttack,
         powerAttackType,
       }),
-    [strength, skill, luck, currentFatigue, maxFatigue, isPowerAttack, powerAttackType],
+    [strength, skill, luck, isRemastered, currentFatigue, maxFatigue, isPowerAttack, powerAttackType],
   );
+
+  // Apply difficulty multiplier
+  const result = useMemo(() => ({
+    ...rawResult,
+    finalHealthDamage: rawResult.finalHealthDamage * difficultyMultiplier,
+    finalFatigueDamage: rawResult.finalFatigueDamage * difficultyMultiplier,
+  }), [rawResult, difficultyMultiplier]);
 
   const breakdown = [
     {
       label: 'Modified H2H Skill',
-      value: result.modifiedSkill,
+      value: rawResult.modifiedSkill,
       tooltip: 'HandToHandSkill + 0.4 × (Luck − 50), clamped 0–100',
     },
     {
       label: 'Base Health Damage',
-      value: result.baseHealthDamage,
+      value: rawResult.baseHealthDamage,
       tooltip: '1 + 10.5 × (Strength / 100) × (ModifiedSkill / 100)',
     },
     {
-      label: 'Fatigue Modifier',
-      value: result.fatigueModifier,
-      tooltip: '(CurrentFatigue / MaxFatigue + 1) / 2 — ranges 0.5 to 1.0',
+      label: `Fatigue Modifier${isRemastered ? ' (disabled)' : ''}`,
+      value: rawResult.fatigueModifier,
+      tooltip: isRemastered
+        ? 'Fatigue does not affect damage in Oblivion Remastered'
+        : '(CurrentFatigue / MaxFatigue + 1) / 2 — ranges 0.5 to 1.0',
     },
     {
       label: `Power Attack Multiplier${!isPowerAttack ? ' (none)' : ''}`,
-      value: result.powerAttackMultiplier,
+      value: rawResult.powerAttackMultiplier,
       tooltip: 'Normal: 2.5×, Standing (Apprentice+): 3×',
+    },
+    {
+      label: 'Pre-difficulty Health Damage',
+      value: rawResult.finalHealthDamage,
+      tooltip: 'Health damage before difficulty multiplier',
+    },
+    {
+      label: `Difficulty Multiplier${difficultyMultiplier === 1 ? ' (default)' : ''}`,
+      value: difficultyMultiplier,
+      tooltip: `Adjustable in Settings. Formula: 5^(−difficulty/100). ×${difficultyMultiplier.toFixed(3)}`,
     },
     {
       label: 'Final Health Damage',
@@ -73,7 +98,7 @@ export default function HandToHandDamage() {
     {
       label: 'Opponent Fatigue Damage',
       value: result.finalFatigueDamage,
-      tooltip: '1 + 0.5 × FinalHealthDamage',
+      tooltip: '(1 + 0.5 × FinalHealthDamage) × difficultyMultiplier',
     },
   ];
 
@@ -116,24 +141,33 @@ export default function HandToHandDamage() {
           onChange={setLuck}
           tooltip="Modifies effective skill: ModifiedSkill = Skill + 0.4 × (Luck − 50)"
         />
-        <StatInput
-          label="Current Fatigue"
-          value={currentFatigue}
-          min={0}
-          max={9999}
-          onChange={setCurrentFatigue}
-          showSlider={false}
-          tooltip="Your current fatigue. Fatigue modifier = (Fatigue / MaxFatigue + 1) / 2"
-        />
-        <StatInput
-          label="Max Fatigue"
-          value={maxFatigue}
-          min={1}
-          max={9999}
-          onChange={setMaxFatigue}
-          showSlider={false}
-          tooltip="Your maximum fatigue (can be buffed). A higher max fatigue reduces the fatigue modifier."
-        />
+
+        {isRemastered ? (
+          <div className="rounded border border-[#2e2e2e] bg-[#1e1e1e] px-3 py-2 text-xs text-gray-500">
+            Fatigue does not affect damage in Oblivion Remastered.
+          </div>
+        ) : (
+          <>
+            <StatInput
+              label="Current Fatigue"
+              value={currentFatigue}
+              min={0}
+              max={9999}
+              onChange={setCurrentFatigue}
+              showSlider={false}
+              tooltip="Your current fatigue. Fatigue modifier = (Fatigue / MaxFatigue + 1) / 2"
+            />
+            <StatInput
+              label="Max Fatigue"
+              value={maxFatigue}
+              min={1}
+              max={9999}
+              onChange={setMaxFatigue}
+              showSlider={false}
+              tooltip="Your maximum fatigue (can be buffed). A higher max fatigue reduces the fatigue modifier."
+            />
+          </>
+        )}
 
         <SectionHeading>Attack Modifiers</SectionHeading>
 
@@ -176,7 +210,9 @@ export default function HandToHandDamage() {
           Fatigue Damage = 1 + 0.5 × Health Damage
           <br />
           <span className="mt-1 block text-gray-600">
-            (Both are then modified by the fatigue modifier and power attack multiplier)
+            {isRemastered
+              ? '(Modified by power attack multiplier only — fatigue has no effect in Remastered)'
+              : '(Both are then modified by the fatigue modifier and power attack multiplier)'}
           </span>
         </div>
       </div>

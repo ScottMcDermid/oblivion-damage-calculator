@@ -44,9 +44,16 @@ interface WeaponDamageProps {
   weaponType: WeaponType;
   // eslint-disable-next-line no-unused-vars
   onWeaponTypeChange: (newType: WeaponType) => void;
+  isRemastered: boolean;
+  difficultyMultiplier: number;
 }
 
-export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponDamageProps) {
+export default function WeaponDamage({
+  weaponType,
+  onWeaponTypeChange,
+  isRemastered,
+  difficultyMultiplier,
+}: WeaponDamageProps) {
 
   // ── Melee preset state ──
   const [presetSubtype, setPresetSubtype] = useState<WeaponSubtype | ''>(DEFAULT_BLADE_SUBTYPE);
@@ -136,7 +143,7 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
 
   const effectiveBaseDamage = isBow ? baseWeaponDamage + baseArrowDamage : baseWeaponDamage;
 
-  const result = useMemo(
+  const rawResult = useMemo(
     () =>
       calcWeaponDamage({
         weaponType,
@@ -146,11 +153,12 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
         luck,
         weaponHealth: weaponConditionPct,
         baseWeaponHealth: 100,
-        currentFatigue,
-        maxFatigue: Math.max(1, maxFatigue),
+        // Remastered: fatigue doesn't affect damage — pass equal values so modifier = 1.0
+        currentFatigue: isRemastered ? 1 : currentFatigue,
+        maxFatigue: isRemastered ? 1 : Math.max(1, maxFatigue),
         isSneaking,
         sneakSkill,
-        isPowerAttack,
+        isPowerAttack: isBow ? false : isPowerAttack,
         powerAttackType,
         hasMasterSneakPerk,
         combinedArmorRating,
@@ -158,12 +166,18 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
         isSilverDaedricOrEnchanted,
       }),
     [
-      weaponType, effectiveBaseDamage, attribute, skill, luck,
-      weaponConditionPct, currentFatigue, maxFatigue,
+      isBow, weaponType, effectiveBaseDamage, attribute, skill, luck,
+      weaponConditionPct, isRemastered, currentFatigue, maxFatigue,
       isSneaking, sneakSkill, isPowerAttack, powerAttackType,
       hasMasterSneakPerk, combinedArmorRating, normalWeaponResistance, isSilverDaedricOrEnchanted,
     ],
   );
+
+  // Apply difficulty multiplier post-calculation
+  const result = useMemo(() => ({
+    ...rawResult,
+    finalDamage: rawResult.finalDamage * difficultyMultiplier,
+  }), [rawResult, difficultyMultiplier]);
 
   const breakdown = [
     {
@@ -178,9 +192,11 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
         'BaseDamage × (150 + Attribute) × (40 + ModifiedSkill × 3) × (Condition% / 100 + 1) / 160000',
     },
     {
-      label: 'Fatigue Modifier',
+      label: `Fatigue Modifier${isRemastered ? ' (disabled)' : ''}`,
       value: result.fatigueModifier,
-      tooltip: '(CurrentFatigue / MaxFatigue + 1) / 2 — ranges 0.5 to 1.0',
+      tooltip: isRemastered
+        ? 'Fatigue does not affect damage in Oblivion Remastered'
+        : '(CurrentFatigue / MaxFatigue + 1) / 2 — ranges 0.5 to 1.0',
     },
     {
       label: `Sneak Multiplier${!isSneaking ? ' (not sneaking)' : ''}`,
@@ -214,6 +230,16 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
       value: result.opponentWeaponResistance,
       tooltip:
         'Silver/Daedric/Enchanted weapons always bypass resistance. Otherwise: (100 − NormalWeaponResistance%) / 100',
+    },
+    {
+      label: `Pre-difficulty Damage`,
+      value: rawResult.finalDamage,
+      tooltip: 'Damage before difficulty multiplier is applied',
+    },
+    {
+      label: `Difficulty Multiplier${difficultyMultiplier === 1 ? ' (default)' : ''}`,
+      value: difficultyMultiplier,
+      tooltip: `Adjustable in Settings. Formula: 5^(−difficulty/100). ×${difficultyMultiplier.toFixed(3)}`,
     },
     {
       label: 'Final Damage',
@@ -437,24 +463,32 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
           onChange={setLuck}
           tooltip="Luck modifies your effective skill: ModifiedSkill = Skill + 0.4 × (Luck − 50)"
         />
-        <StatInput
-          label="Current Fatigue"
-          value={currentFatigue}
-          min={0}
-          max={9999}
-          onChange={setCurrentFatigue}
-          showSlider={false}
-          tooltip="Your current fatigue. Fatigue modifier = (Fatigue / MaxFatigue + 1) / 2"
-        />
-        <StatInput
-          label="Max Fatigue"
-          value={maxFatigue}
-          min={1}
-          max={9999}
-          onChange={setMaxFatigue}
-          showSlider={false}
-          tooltip="Your maximum fatigue (can be buffed above base). A higher max fatigue reduces the fatigue modifier."
-        />
+        {isRemastered ? (
+          <div className="rounded border border-[#2e2e2e] bg-[#1e1e1e] px-3 py-2 text-xs text-gray-500">
+            Fatigue does not affect damage in Oblivion Remastered.
+          </div>
+        ) : (
+          <>
+            <StatInput
+              label="Current Fatigue"
+              value={currentFatigue}
+              min={0}
+              max={9999}
+              onChange={setCurrentFatigue}
+              showSlider={false}
+              tooltip="Your current fatigue. Fatigue modifier = (Fatigue / MaxFatigue + 1) / 2"
+            />
+            <StatInput
+              label="Max Fatigue"
+              value={maxFatigue}
+              min={1}
+              max={9999}
+              onChange={setMaxFatigue}
+              showSlider={false}
+              tooltip="Your maximum fatigue (can be buffed above base). A higher max fatigue reduces the fatigue modifier."
+            />
+          </>
+        )}
 
         <SectionHeading>Attack Modifiers</SectionHeading>
 

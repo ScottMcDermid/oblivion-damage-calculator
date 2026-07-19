@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import {
   AppBar,
   Box,
+  Button,
   StyledEngineProvider,
   Tab,
   Tabs,
@@ -16,10 +17,12 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { GiFist, GiSpikedMace } from 'react-icons/gi';
 import { TbArcheryArrow } from 'react-icons/tb';
 import { LuSword } from 'react-icons/lu';
+import { IoSettingsOutline } from 'react-icons/io5';
 
 import theme from '@/app/theme';
 import WeaponDamage from '@/components/WeaponDamage';
 import HandToHandDamage from '@/components/HandToHandDamage';
+import SettingsDrawer from '@/components/SettingsDrawer';
 import { type WeaponType } from '@/utils/damageFormulas';
 
 type ActiveTab = 'blade' | 'blunt' | 'bow' | 'h2h';
@@ -46,6 +49,12 @@ function weaponTypeToTab(wt: WeaponType): ActiveTab {
 export default function DamageCalculator() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('blade');
   const [lastWeaponTab, setLastWeaponTab] = useState<Exclude<ActiveTab, 'h2h'>>('blade');
+
+  // Settings
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isRemastered, setIsRemastered] = useState(false);
+  const [difficulty, setDifficulty] = useState(0);
+  const difficultyMultiplier = Math.pow(6, -difficulty / 100);
 
   const isWeapon = activeTab !== 'h2h';
   // Always derived from lastWeaponTab so weaponType never changes spuriously when H2H is active
@@ -90,6 +99,15 @@ export default function DamageCalculator() {
             </Typography>
 
             <Box sx={{ flex: 1 }} />
+
+            <Button
+              size="small"
+              onClick={() => setIsSettingsOpen(true)}
+              sx={{ gap: 0.5, fontSize: '0.8rem' }}
+            >
+              <IoSettingsOutline className="text-base" />
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Settings</Box>
+            </Button>
           </Toolbar>
         </AppBar>
 
@@ -127,10 +145,15 @@ export default function DamageCalculator() {
             <WeaponDamage
               weaponType={weaponType}
               onWeaponTypeChange={handleWeaponTypeChange}
+              isRemastered={isRemastered}
+              difficultyMultiplier={difficultyMultiplier}
             />
           </div>
           <div style={{ display: isWeapon ? 'none' : undefined }}>
-            <HandToHandDamage />
+            <HandToHandDamage
+              isRemastered={isRemastered}
+              difficultyMultiplier={difficultyMultiplier}
+            />
           </div>
         </main>
 
@@ -189,6 +212,14 @@ export default function DamageCalculator() {
             </div>
           </div>
         </footer>
+        <SettingsDrawer
+          open={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          isRemastered={isRemastered}
+          onRemasteredChange={setIsRemastered}
+          difficulty={difficulty}
+          onDifficultyChange={setDifficulty}
+        />
       </ThemeProvider>
     </StyledEngineProvider>
   );
