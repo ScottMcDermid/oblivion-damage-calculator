@@ -87,7 +87,6 @@ export default function WeaponDamage({
   const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
 
   // ── Opponent ──
-  const [hasMasterSneakPerk, setHasMasterSneakPerk] = useState(false);
   const [combinedArmorRating, setCombinedArmorRating] = useState(0);
   const [normalWeaponResistance, setNormalWeaponResistance] = useState(0);
   const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useState(false);
@@ -141,6 +140,8 @@ export default function WeaponDamage({
   const isBow = weaponType === 'Bow';
   // Two-handed when a preset is active; defaults to false (one-handed) in Custom mode
   const isTwoHanded = !isBow && !!presetSubtype && subtypeIsTwoHanded(presetSubtype as WeaponSubtype);
+  // Master Sneak perk (armor bypass) is granted at Sneak = 100
+  const hasMasterSneakPerk = isSneaking && sneakSkill >= 100;
   const attributeLabel = isBow ? 'Agility' : 'Strength';
   const skillLabel =
     weaponType === 'Blade' ? 'Blade Skill' : weaponType === 'Blunt' ? 'Blunt Skill' : 'Marksman Skill';
@@ -173,8 +174,8 @@ export default function WeaponDamage({
     [
       isBow, isTwoHanded, weaponType, effectiveBaseDamage, attribute, skill, luck,
       weaponConditionPct, isRemastered, currentFatigue, maxFatigue,
-      isSneaking, sneakSkill, isPowerAttack, powerAttackType,
-      hasMasterSneakPerk, combinedArmorRating, normalWeaponResistance, isSilverDaedricOrEnchanted,
+      isSneaking, sneakSkill, hasMasterSneakPerk, isPowerAttack, powerAttackType,
+      combinedArmorRating, normalWeaponResistance, isSilverDaedricOrEnchanted,
     ],
   );
 
@@ -228,8 +229,8 @@ export default function WeaponDamage({
       label: 'Opponent Armor Rating',
       value: result.opponentArmorRating,
       tooltip:
-        hasMasterSneakPerk && isSneaking
-          ? 'Master Sneak perk bypasses armor (= 1)'
+        hasMasterSneakPerk
+          ? 'Sneak = 100 (Master perk) bypasses opponent armor while sneaking (= 1)'
           : '(100 − CombinedArmorRating) / 100, AR capped at 85',
     },
     {
@@ -502,23 +503,17 @@ export default function WeaponDamage({
         <SectionHeading>Attack Modifiers</SectionHeading>
 
         <div className="flex flex-wrap gap-x-6 gap-y-1">
-          {isTwoHanded ? (
-            <span className="text-xs text-gray-600">
-              Two-handed weapons do not receive a sneak attack bonus.
-            </span>
-          ) : (
-            <FormControlLabel
-              control={
-                <Switch
-                  size="small"
-                  checked={isSneaking}
-                  onChange={(e) => setIsSneaking(e.target.checked)}
-                  color="secondary"
-                />
-              }
-              label={<span className="text-xs text-gray-300">Sneak Attack</span>}
-            />
-          )}
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={isSneaking}
+                onChange={(e) => setIsSneaking(e.target.checked)}
+                color="secondary"
+              />
+            }
+            label={<span className="text-xs text-gray-300">Sneak Attack</span>}
+          />
           {!isBow && (
             <FormControlLabel
               control={
@@ -534,22 +529,34 @@ export default function WeaponDamage({
           )}
         </div>
 
-        {isSneaking && !isTwoHanded && (
-          <div className="ml-1 mt-2 space-y-1 rounded border border-[#2e2e2e] bg-[#1e1e1e] p-3">
-            <div className="mb-2 text-xs text-gray-500">
-              Sneak attack multiplier{!isBow && ' (only highest of sneak/power attack applies)'}:
-              <span className="ml-2 font-semibold text-gray-300">
-                {isBow ? (sneakSkill >= 25 ? '3×' : '2×') : sneakSkill >= 25 ? '6×' : '4×'}
-              </span>
-            </div>
+        {isSneaking && (
+          <div className="ml-1 mt-2 space-y-2 rounded border border-[#2e2e2e] bg-[#1e1e1e] p-3">
             <StatInput
               label="Sneak Skill"
               value={sneakSkill}
               min={0}
               max={100}
               onChange={setSneakSkill}
-              tooltip="Determines sneak attack tier: 0–24 (Novice) or 25+ (Apprentice+)"
+              tooltip="Determines sneak attack tier (25+ = Apprentice) and the Master Sneak perk (100 = bypasses opponent armor while sneaking)"
             />
+            {!isTwoHanded && (
+              <div className="text-xs text-gray-500">
+                Sneak attack multiplier{!isBow && ' (only highest of sneak/power attack applies)'}:
+                <span className="ml-2 font-semibold text-gray-300">
+                  {isBow ? (sneakSkill >= 25 ? '3×' : '2×') : sneakSkill >= 25 ? '6×' : '4×'}
+                </span>
+              </div>
+            )}
+            {isTwoHanded && (
+              <div className="text-xs text-gray-500">
+                Two-handed weapons receive no damage bonus from sneak attacks.
+              </div>
+            )}
+            {sneakSkill >= 100 && (
+              <div className="text-xs text-yellow-400">
+                Master Sneak perk active — opponent armor bypassed while sneaking.
+              </div>
+            )}
           </div>
         )}
 
@@ -593,27 +600,6 @@ export default function WeaponDamage({
           onChange={setCombinedArmorRating}
           tooltip="Sum of all armor pieces (each scaled by armor skill and condition). Hard-capped at 85."
         />
-
-        <div className="flex flex-wrap gap-x-6 gap-y-1">
-          <FormControlLabel
-            control={
-              <Switch
-                size="small"
-                checked={hasMasterSneakPerk}
-                onChange={(e) => setHasMasterSneakPerk(e.target.checked)}
-                color="secondary"
-              />
-            }
-            label={
-              <Tooltip
-                title="Attacker has Master (100) Sneak perk — opponent armor rating becomes 1 when sneaking"
-                arrow
-              >
-                <span className="cursor-help text-xs text-gray-300">Attacker has Master Sneak perk</span>
-              </Tooltip>
-            }
-          />
-        </div>
 
         {!isBow && (
           <div className="mt-2 space-y-1">
