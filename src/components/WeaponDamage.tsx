@@ -189,16 +189,18 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
         ? 'Bow: 2× (Sneak 0–24) or 3× (Sneak 25+) while sneaking undetected'
         : 'Melee: 4× (Sneak 0–24) or 6× (Sneak 25+) while sneaking undetected',
     },
-    {
-      label: `Power Attack Multiplier${!isPowerAttack ? ' (no power attack)' : ''}`,
-      value: result.powerAttackMultiplier,
-      tooltip: 'Normal: 2.5×, Standing (Apprentice+): 3×',
-    },
-    {
-      label: 'Applied Multiplier (max of above)',
-      value: result.appliedMultiplier,
-      tooltip: 'Only the higher of sneak or power attack multiplier applies',
-    },
+    ...(!isBow ? [
+      {
+        label: `Power Attack Multiplier${!isPowerAttack ? ' (no power attack)' : ''}`,
+        value: result.powerAttackMultiplier,
+        tooltip: 'Normal: 2.5×, Standing (Apprentice+): 3×',
+      },
+      {
+        label: 'Applied Multiplier (max of above)',
+        value: result.appliedMultiplier,
+        tooltip: 'Only the higher of sneak or power attack multiplier applies',
+      },
+    ] : []),
     {
       label: 'Opponent Armor Rating',
       value: result.opponentArmorRating,
@@ -468,23 +470,25 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
             }
             label={<span className="text-xs text-gray-300">Sneak Attack</span>}
           />
-          <FormControlLabel
-            control={
-              <Switch
-                size="small"
-                checked={isPowerAttack}
-                onChange={(e) => setIsPowerAttack(e.target.checked)}
-                color="secondary"
-              />
-            }
-            label={<span className="text-xs text-gray-300">Power Attack</span>}
-          />
+          {!isBow && (
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={isPowerAttack}
+                  onChange={(e) => setIsPowerAttack(e.target.checked)}
+                  color="secondary"
+                />
+              }
+              label={<span className="text-xs text-gray-300">Power Attack</span>}
+            />
+          )}
         </div>
 
         {isSneaking && (
           <div className="ml-1 mt-2 space-y-1 rounded border border-[#2e2e2e] bg-[#1e1e1e] p-3">
             <div className="mb-2 text-xs text-gray-500">
-              Sneak attack multiplier (only highest of sneak/power attack applies):
+              Sneak attack multiplier{!isBow && ' (only highest of sneak/power attack applies)'}:
               <span className="ml-2 font-semibold text-gray-300">
                 {isBow ? (sneakSkill >= 25 ? '3×' : '2×') : sneakSkill >= 25 ? '6×' : '4×'}
               </span>
@@ -500,7 +504,7 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
           </div>
         )}
 
-        {isPowerAttack && (
+        {!isBow && isPowerAttack && (
           <div className="ml-1 mt-2 rounded border border-[#2e2e2e] bg-[#1e1e1e] p-3">
             <div className="mb-2 text-xs text-gray-500">
               Power attack type (only highest of sneak/power attack applies):
@@ -521,7 +525,7 @@ export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponD
           </div>
         )}
 
-        {isSneaking && isPowerAttack && (
+        {!isBow && isSneaking && isPowerAttack && (
           <div className="rounded border border-amber-800/50 bg-amber-900/10 px-3 py-2 text-xs text-amber-400">
             Note: only the higher multiplier applies — a sneak power attack uses only the sneak
             multiplier ({isBow ? (sneakSkill >= 25 ? '3×' : '2×') : sneakSkill >= 25 ? '6×' : '4×'})
