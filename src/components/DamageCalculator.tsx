@@ -13,23 +13,52 @@ import {
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { GiCrossedSwords, GiFist, GiFireball } from 'react-icons/gi';
+import { GiCrossedSwords, GiFist, GiPocketBow, GiSwordman } from 'react-icons/gi';
 
 import theme from '@/app/theme';
 import WeaponDamage from '@/components/WeaponDamage';
 import HandToHandDamage from '@/components/HandToHandDamage';
-import SpellDamage from '@/components/SpellDamage';
+import { type WeaponType } from '@/utils/damageFormulas';
 
-type TabId = 'weapon' | 'h2h' | 'spell';
+type ActiveTab = 'blade' | 'blunt' | 'bow' | 'h2h';
 
-const TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
-  { id: 'weapon', label: 'Weapon', Icon: GiCrossedSwords },
-  { id: 'h2h', label: 'Hand to Hand', Icon: GiFist },
-  { id: 'spell', label: 'Spell', Icon: GiFireball },
+const TABS: { id: ActiveTab; label: string; Icon: React.ElementType }[] = [
+  { id: 'blade', label: 'Blade',        Icon: GiCrossedSwords },
+  { id: 'blunt', label: 'Blunt',        Icon: GiSwordman },
+  { id: 'bow',   label: 'Bow',          Icon: GiPocketBow },
+  { id: 'h2h',   label: 'Hand to Hand', Icon: GiFist },
 ];
 
+function tabToWeaponType(tab: ActiveTab): WeaponType {
+  if (tab === 'blunt') return 'Blunt';
+  if (tab === 'bow')   return 'Bow';
+  return 'Blade';
+}
+
+function weaponTypeToTab(wt: WeaponType): ActiveTab {
+  if (wt === 'Blunt') return 'blunt';
+  if (wt === 'Bow')   return 'bow';
+  return 'blade';
+}
+
 export default function DamageCalculator() {
-  const [activeTab, setActiveTab] = useState<TabId>('weapon');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('blade');
+  const [lastWeaponTab, setLastWeaponTab] = useState<Exclude<ActiveTab, 'h2h'>>('blade');
+
+  const isWeapon = activeTab !== 'h2h';
+  // Always derived from lastWeaponTab so weaponType never changes spuriously when H2H is active
+  const weaponType = tabToWeaponType(lastWeaponTab);
+
+  const handleTabChange = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    if (tab !== 'h2h') setLastWeaponTab(tab);
+  };
+
+  const handleWeaponTypeChange = (wt: WeaponType) => {
+    const tab = weaponTypeToTab(wt) as Exclude<ActiveTab, 'h2h'>;
+    setActiveTab(tab);
+    setLastWeaponTab(tab);
+  };
 
   return (
     <StyledEngineProvider injectFirst>
@@ -66,7 +95,7 @@ export default function DamageCalculator() {
         <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: 'background.paper' }}>
           <Tabs
             value={activeTab}
-            onChange={(_, v: TabId) => setActiveTab(v)}
+            onChange={(_, v: ActiveTab) => handleTabChange(v)}
             variant="scrollable"
             scrollButtons="auto"
             sx={{
@@ -91,9 +120,16 @@ export default function DamageCalculator() {
 
         {/* ── Main content ── */}
         <main className="mx-auto w-full max-w-6xl px-4 py-6">
-          {activeTab === 'weapon' && <WeaponDamage />}
-          {activeTab === 'h2h' && <HandToHandDamage />}
-          {activeTab === 'spell' && <SpellDamage />}
+          {/* WeaponDamage stays mounted to preserve state; hidden when H2H is active */}
+          <div style={{ display: isWeapon ? undefined : 'none' }}>
+            <WeaponDamage
+              weaponType={weaponType}
+              onWeaponTypeChange={handleWeaponTypeChange}
+            />
+          </div>
+          <div style={{ display: isWeapon ? 'none' : undefined }}>
+            <HandToHandDamage />
+          </div>
         </main>
 
         {/* ── Footer ── */}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Divider,
   FormControl,
@@ -13,7 +13,6 @@ import {
   ToggleButtonGroup,
   Tooltip,
 } from '@mui/material';
-import { GiCrossedSwords, GiPocketBow, GiSwordman } from 'react-icons/gi';
 
 import StatInput from '@/components/StatInput';
 import ResultDisplay from '@/components/ResultDisplay';
@@ -29,14 +28,6 @@ import {
   type WeaponSubtype,
 } from '@/utils/weaponPresets';
 
-const WEAPON_TYPES: WeaponType[] = ['Blade', 'Blunt', 'Bow'];
-
-const weaponTypeIcons: Record<WeaponType, React.ReactNode> = {
-  Blade: <GiCrossedSwords className="text-base" />,
-  Blunt: <GiSwordman className="text-base" />,
-  Bow: <GiPocketBow className="text-base" />,
-};
-
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-3 mt-5 text-xs font-semibold uppercase tracking-widest text-gray-500 first:mt-0">
@@ -49,9 +40,13 @@ const DEFAULT_BLADE_SUBTYPE: WeaponSubtype = 'Longsword';
 const DEFAULT_BLUNT_SUBTYPE: WeaponSubtype = 'Mace';
 const DEFAULT_MATERIAL: WeaponMaterial = 'Iron';
 
-export default function WeaponDamage() {
-  // ── Weapon type ──
-  const [weaponType, setWeaponType] = useState<WeaponType>('Blade');
+interface WeaponDamageProps {
+  weaponType: WeaponType;
+  // eslint-disable-next-line no-unused-vars
+  onWeaponTypeChange: (newType: WeaponType) => void;
+}
+
+export default function WeaponDamage({ weaponType, onWeaponTypeChange }: WeaponDamageProps) {
 
   // ── Melee preset state ──
   const [presetSubtype, setPresetSubtype] = useState<WeaponSubtype | ''>(DEFAULT_BLADE_SUBTYPE);
@@ -67,14 +62,7 @@ export default function WeaponDamage() {
     return p?.baseDamage ?? 10;
   });
   const [baseArrowDamage, setBaseArrowDamage] = useState(() => getArrowPreset(DEFAULT_MATERIAL).baseDamage);
-  const [weaponHealth, setWeaponHealth] = useState(() => {
-    const p = getPreset(DEFAULT_MATERIAL, DEFAULT_BLADE_SUBTYPE);
-    return p?.baseHealth ?? 140;
-  });
-  const [baseWeaponHealth, setBaseWeaponHealth] = useState(() => {
-    const p = getPreset(DEFAULT_MATERIAL, DEFAULT_BLADE_SUBTYPE);
-    return p?.baseHealth ?? 140;
-  });
+  const [weaponConditionPct, setWeaponConditionPct] = useState(100);
 
   // ── Attacker stats ──
   const [attribute, setAttribute] = useState(50);
@@ -97,43 +85,49 @@ export default function WeaponDamage() {
 
   // ── Preset application helpers ──
 
-  const applyMeleePreset = (subtype: WeaponSubtype | '', material: WeaponMaterial | '') => {
+  const applyMeleePreset = (subtype: WeaponSubtype | '', material: WeaponMaterial | '', resetCondition = true) => {
     setPresetSubtype(subtype);
     setPresetMaterial(material);
     if (!subtype || !material) return;
     const p = getPreset(material, subtype);
     if (!p) return;
     setBaseWeaponDamage(p.baseDamage);
-    setBaseWeaponHealth(p.baseHealth);
-    setWeaponHealth(p.baseHealth);
-    setWeaponType(p.weaponType);
+    if (resetCondition) setWeaponConditionPct(100);
+    onWeaponTypeChange(p.weaponType);
     setIsSilverDaedricOrEnchanted(p.bypassesResistance);
   };
 
-  const applyBowPreset = (bowMat: WeaponMaterial, arrowMat: WeaponMaterial) => {
+  const applyBowPreset = (
+    bowMat: WeaponMaterial,
+    arrowMat: WeaponMaterial,
+    resetCondition = true,
+  ) => {
     const bow = getBowPreset(bowMat);
     const arrow = getArrowPreset(arrowMat);
     setBaseWeaponDamage(bow.baseDamage);
-    setBaseWeaponHealth(bow.baseHealth);
-    setWeaponHealth(bow.baseHealth);
+    if (resetCondition) setWeaponConditionPct(100);
     setBaseArrowDamage(arrow.baseDamage);
   };
 
-  // ── Weapon type toggle handler — resets presets on switch ──
-  const handleWeaponTypeChange = (newType: WeaponType) => {
-    setWeaponType(newType);
-    if (newType === 'Bow') {
+  // ── Reset presets when weaponType prop changes from the top-bar ──
+  const prevWeaponType = useRef(weaponType);
+  useEffect(() => {
+    if (weaponType === prevWeaponType.current) return;
+    prevWeaponType.current = weaponType;
+    if (weaponType === 'Bow') {
       setPresetBowMaterial(DEFAULT_MATERIAL);
       setPresetArrowMaterial(DEFAULT_MATERIAL);
-      applyBowPreset(DEFAULT_MATERIAL, DEFAULT_MATERIAL);
+      applyBowPreset(DEFAULT_MATERIAL, DEFAULT_MATERIAL, false);
       setIsSilverDaedricOrEnchanted(false);
     } else {
-      const defaultSubtype = newType === 'Blunt' ? DEFAULT_BLUNT_SUBTYPE : DEFAULT_BLADE_SUBTYPE;
+      const defaultSubtype = weaponType === 'Blunt' ? DEFAULT_BLUNT_SUBTYPE : DEFAULT_BLADE_SUBTYPE;
       setPresetSubtype(defaultSubtype);
       setPresetMaterial(DEFAULT_MATERIAL);
-      applyMeleePreset(defaultSubtype, DEFAULT_MATERIAL);
+      applyMeleePreset(defaultSubtype, DEFAULT_MATERIAL, false);
     }
-  };
+  // applyBowPreset and applyMeleePreset are stable (defined in render, but deps are stable state setters)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weaponType]);
 
   const isBow = weaponType === 'Bow';
   const attributeLabel = isBow ? 'Agility' : 'Strength';
@@ -150,8 +144,8 @@ export default function WeaponDamage() {
         attribute,
         skill,
         luck,
-        weaponHealth,
-        baseWeaponHealth: Math.max(1, baseWeaponHealth),
+        weaponHealth: weaponConditionPct,
+        baseWeaponHealth: 100,
         currentFatigue,
         maxFatigue: Math.max(1, maxFatigue),
         isSneaking,
@@ -165,7 +159,7 @@ export default function WeaponDamage() {
       }),
     [
       weaponType, effectiveBaseDamage, attribute, skill, luck,
-      weaponHealth, baseWeaponHealth, currentFatigue, maxFatigue,
+      weaponConditionPct, currentFatigue, maxFatigue,
       isSneaking, sneakSkill, isPowerAttack, powerAttackType,
       hasMasterSneakPerk, combinedArmorRating, normalWeaponResistance, isSilverDaedricOrEnchanted,
     ],
@@ -181,7 +175,7 @@ export default function WeaponDamage() {
       label: 'Weapon Rating (WR)',
       value: result.weaponRating,
       tooltip:
-        'BaseDamage × (150 + Attribute) × (40 + ModifiedSkill × 3) × (WeaponHealth/MaxHealth + 1) / 160000',
+        'BaseDamage × (150 + Attribute) × (40 + ModifiedSkill × 3) × (Condition% / 100 + 1) / 160000',
     },
     {
       label: 'Fatigue Modifier',
@@ -234,7 +228,7 @@ export default function WeaponDamage() {
     if (!p) return null;
     return {
       label: `${presetMaterial} ${presetSubtype}`,
-      detail: `Base damage: ${p.baseDamage} · Max condition: ${p.baseHealth}`,
+      detail: `Base damage: ${p.baseDamage}`,
       warn: p.bypassesResistance,
     };
   })();
@@ -244,7 +238,7 @@ export default function WeaponDamage() {
     const arrow = getArrowPreset(presetArrowMaterial);
     return {
       label: `${presetBowMaterial} Bow + ${presetArrowMaterial} Arrow`,
-      detail: `Base: ${bow.baseDamage} + ${arrow.baseDamage} = ${bow.baseDamage + arrow.baseDamage} combined · Bow max condition: ${bow.baseHealth}`,
+      detail: `Base: ${bow.baseDamage} + ${arrow.baseDamage} = ${bow.baseDamage + arrow.baseDamage} combined`,
     };
   })();
 
@@ -252,24 +246,6 @@ export default function WeaponDamage() {
     <div className="flex flex-col gap-0 lg:flex-row lg:gap-8">
       {/* ── Inputs ── */}
       <div className="min-w-0 flex-1 space-y-1">
-
-        {/* ── Weapon type toggle ── */}
-        <SectionHeading>Weapon Type</SectionHeading>
-        <div className="mb-4">
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            value={weaponType}
-            onChange={(_, v) => { if (v) handleWeaponTypeChange(v); }}
-          >
-            {WEAPON_TYPES.map((t) => (
-              <ToggleButton key={t} value={t} sx={{ gap: 0.75, px: 1.5, fontSize: '0.75rem' }}>
-                {weaponTypeIcons[t]}
-                {t}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
-        </div>
 
         {/* ── Preset selector — melee ── */}
         {!isBow && (
@@ -421,24 +397,12 @@ export default function WeaponDamage() {
 
         <StatInput
           label="Weapon Condition"
-          value={weaponHealth}
+          value={weaponConditionPct}
           min={0}
-          max={9999}
-          onChange={setWeaponHealth}
-          showSlider={false}
-          tooltip="Current weapon health / condition"
-        />
-        <StatInput
-          label="Max Weapon Condition"
-          value={baseWeaponHealth}
-          min={1}
-          max={9999}
-          onChange={(v) => {
-            setBaseWeaponHealth(v);
-            if (!isBow) { setPresetSubtype(''); setPresetMaterial(''); }
-          }}
-          showSlider={false}
-          tooltip="Maximum (base) weapon health. Ratio = WeaponHealth / BaseWeaponHealth"
+          max={125}
+          onChange={setWeaponConditionPct}
+          suffix="%"
+          tooltip="Weapon condition as a percentage of maximum. 100% = full condition. Can exceed 100% (up to 125%) if repaired above base. Affects damage as (condition% / 100 + 1) / 4 within the weapon rating formula."
         />
 
         <SectionHeading>Attacker Stats</SectionHeading>
