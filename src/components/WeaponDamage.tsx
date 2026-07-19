@@ -24,6 +24,7 @@ import {
   getPreset,
   getBowPreset,
   getArrowPreset,
+  subtypeIsTwoHanded,
   type WeaponMaterial,
   type WeaponSubtype,
 } from '@/utils/weaponPresets';
@@ -137,6 +138,8 @@ export default function WeaponDamage({
   }, [weaponType]);
 
   const isBow = weaponType === 'Bow';
+  // Two-handed when a preset is active; defaults to false (one-handed) in Custom mode
+  const isTwoHanded = !isBow && !!presetSubtype && subtypeIsTwoHanded(presetSubtype as WeaponSubtype);
   const attributeLabel = isBow ? 'Agility' : 'Strength';
   const skillLabel =
     weaponType === 'Blade' ? 'Blade Skill' : weaponType === 'Blunt' ? 'Blunt Skill' : 'Marksman Skill';
@@ -158,6 +161,7 @@ export default function WeaponDamage({
         maxFatigue: isRemastered ? 1 : Math.max(1, maxFatigue),
         isSneaking,
         sneakSkill,
+        isTwoHanded,
         isPowerAttack: isBow ? false : isPowerAttack,
         powerAttackType,
         hasMasterSneakPerk,
@@ -166,7 +170,7 @@ export default function WeaponDamage({
         isSilverDaedricOrEnchanted,
       }),
     [
-      isBow, weaponType, effectiveBaseDamage, attribute, skill, luck,
+      isBow, isTwoHanded, weaponType, effectiveBaseDamage, attribute, skill, luck,
       weaponConditionPct, isRemastered, currentFatigue, maxFatigue,
       isSneaking, sneakSkill, isPowerAttack, powerAttackType,
       hasMasterSneakPerk, combinedArmorRating, normalWeaponResistance, isSilverDaedricOrEnchanted,
@@ -203,7 +207,9 @@ export default function WeaponDamage({
       value: result.sneakMultiplier,
       tooltip: isBow
         ? 'Bow: 2× (Sneak 0–24) or 3× (Sneak 25+) while sneaking undetected'
-        : 'Melee: 4× (Sneak 0–24) or 6× (Sneak 25+) while sneaking undetected',
+        : isTwoHanded
+          ? 'Two-handed weapons receive no sneak attack bonus (always 1×)'
+          : 'One-handed: 4× (Sneak 0–24) or 6× (Sneak 25+) while sneaking undetected',
     },
     ...(!isBow ? [
       {
@@ -493,17 +499,23 @@ export default function WeaponDamage({
         <SectionHeading>Attack Modifiers</SectionHeading>
 
         <div className="flex flex-wrap gap-x-6 gap-y-1">
-          <FormControlLabel
-            control={
-              <Switch
-                size="small"
-                checked={isSneaking}
-                onChange={(e) => setIsSneaking(e.target.checked)}
-                color="secondary"
-              />
-            }
-            label={<span className="text-xs text-gray-300">Sneak Attack</span>}
-          />
+          {isTwoHanded ? (
+            <span className="text-xs text-gray-600">
+              Two-handed weapons do not receive a sneak attack bonus.
+            </span>
+          ) : (
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={isSneaking}
+                  onChange={(e) => setIsSneaking(e.target.checked)}
+                  color="secondary"
+                />
+              }
+              label={<span className="text-xs text-gray-300">Sneak Attack</span>}
+            />
+          )}
           {!isBow && (
             <FormControlLabel
               control={
@@ -519,7 +531,7 @@ export default function WeaponDamage({
           )}
         </div>
 
-        {isSneaking && (
+        {isSneaking && !isTwoHanded && (
           <div className="ml-1 mt-2 space-y-1 rounded border border-[#2e2e2e] bg-[#1e1e1e] p-3">
             <div className="mb-2 text-xs text-gray-500">
               Sneak attack multiplier{!isBow && ' (only highest of sneak/power attack applies)'}:
@@ -559,7 +571,7 @@ export default function WeaponDamage({
           </div>
         )}
 
-        {!isBow && isSneaking && isPowerAttack && (
+        {!isBow && !isTwoHanded && isSneaking && isPowerAttack && (
           <div className="rounded border border-amber-800/50 bg-amber-900/10 px-3 py-2 text-xs text-amber-400">
             Note: only the higher multiplier applies — a sneak power attack uses only the sneak
             multiplier ({isBow ? (sneakSkill >= 25 ? '3×' : '2×') : sneakSkill >= 25 ? '6×' : '4×'})

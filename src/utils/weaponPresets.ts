@@ -64,6 +64,13 @@ export const BLUNT_SUBTYPES: WeaponSubtype[] = [
   'Warhammer',
 ];
 
+/** Two-handed subtypes do not receive a sneak attack bonus (always 1×). */
+export const TWO_HANDED_SUBTYPES: WeaponSubtype[] = ['Claymore', 'Battle Axe', 'Warhammer'];
+
+export function subtypeIsTwoHanded(subtype: WeaponSubtype): boolean {
+  return TWO_HANDED_SUBTYPES.includes(subtype);
+}
+
 export const ALL_SUBTYPES: WeaponSubtype[] = [...BLADE_SUBTYPES, ...BLUNT_SUBTYPES];
 
 export function subtypeToWeaponType(subtype: WeaponSubtype): WeaponType {

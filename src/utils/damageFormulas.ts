@@ -32,6 +32,7 @@ export interface WeaponDamageInputs {
   maxFatigue: number; // max fatigue (must be > 0)
   isSneaking: boolean;
   sneakSkill: number; // 0–100, used for sneak multiplier tier
+  isTwoHanded: boolean; // two-handed weapons receive no sneak attack bonus
   isPowerAttack: boolean;
   powerAttackType: 'normal' | 'standing'; // standing = apprentice perk, 3×
   hasMasterSneakPerk: boolean; // bypasses opponent armor rating
@@ -86,19 +87,20 @@ export function calcFatigueModifier(currentFatigue: number, maxFatigue: number):
 /**
  * SneakMultiplier for weapon attacks.
  * Only applies when sneaking and undetected.
- * Melee: 4 (skill 0-24) or 6 (skill 25+)
- * Bow:   2 (skill 0-24) or 3 (skill 25+)
+ * One-handed melee / H2H: 4 (skill 0-24) or 6 (skill 25+)
+ * Bow:                    2 (skill 0-24) or 3 (skill 25+)
+ * Two-handed melee:       1 (no sneak bonus)
  * Returns 1 if not sneaking.
  */
 export function calcSneakMultiplier(
   isSneaking: boolean,
   sneakSkill: number,
   isBow: boolean,
+  isTwoHanded = false,
 ): number {
   if (!isSneaking) return 1;
-  if (isBow) {
-    return sneakSkill >= 25 ? 3 : 2;
-  }
+  if (isTwoHanded) return 1;
+  if (isBow) return sneakSkill >= 25 ? 3 : 2;
   return sneakSkill >= 25 ? 6 : 4;
 }
 
@@ -170,6 +172,7 @@ export function calcWeaponDamage(inputs: WeaponDamageInputs): WeaponDamageResult
     inputs.isSneaking,
     inputs.sneakSkill,
     inputs.weaponType === 'Bow',
+    inputs.isTwoHanded,
   );
 
   const powerAttackMultiplier = calcPowerAttackMultiplier(
