@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FormControlLabel,
   Switch,
@@ -49,6 +49,18 @@ export default function HandToHandDamage({
   const [combinedArmorRating, setCombinedArmorRating] = useState(0);
   const [normalWeaponResistance, setNormalWeaponResistance] = useState(0);
   const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useState(false);
+  const wasManuallyEnabled = useRef(false);
+
+  // Auto-toggle Bypasses Resistance when H2H skill crosses the Journeyman threshold (≥ 50).
+  // When skill drops back below 50, only auto-disable if the user didn't manually enable it
+  // (e.g. for enchanted gauntlets/bracers).
+  useEffect(() => {
+    if (skill >= 50) {
+      setIsSilverDaedricOrEnchanted(true);
+    } else if (!wasManuallyEnabled.current) {
+      setIsSilverDaedricOrEnchanted(false);
+    }
+  }, [skill]);
 
   const hasMasterSneakPerk = isSneaking && sneakSkill >= 100;
 
@@ -316,7 +328,11 @@ export default function HandToHandDamage({
                 <Switch
                   size="small"
                   checked={isSilverDaedricOrEnchanted}
-                  onChange={(e) => setIsSilverDaedricOrEnchanted(e.target.checked)}
+                  disabled={skill >= 50}
+                  onChange={(e) => {
+                    wasManuallyEnabled.current = e.target.checked;
+                    setIsSilverDaedricOrEnchanted(e.target.checked);
+                  }}
                   color="secondary"
                 />
               }
