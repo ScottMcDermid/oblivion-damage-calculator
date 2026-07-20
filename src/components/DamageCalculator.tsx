@@ -75,6 +75,7 @@ export default function DamageCalculator() {
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <div className="flex min-h-screen flex-col">
 
         {/* ── Header ── */}
         <AppBar position="static" sx={{ backgroundColor: 'background.paper' }} elevation={1}>
@@ -139,7 +140,7 @@ export default function DamageCalculator() {
         </Box>
 
         {/* ── Main content ── */}
-        <main className="mx-auto w-full max-w-6xl px-4 py-6">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
           {/* WeaponDamage stays mounted to preserve state; hidden when H2H is active */}
           <div style={{ display: isWeapon ? undefined : 'none' }}>
             <WeaponDamage
@@ -158,7 +159,7 @@ export default function DamageCalculator() {
         </main>
 
         {/* ── Footer ── */}
-        <footer className="mt-16 w-full border-t border-gray-700 bg-neutral-900 px-6 py-8 text-sm text-gray-400">
+        <footer className="w-full border-t border-gray-700 bg-neutral-900 px-6 py-8 text-sm text-gray-400">
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 text-center sm:text-left">
             <div className="space-y-2">
               <p>Oblivion Tool Suite © 2025 Scott McDermid</p>
@@ -212,6 +213,7 @@ export default function DamageCalculator() {
             </div>
           </div>
         </footer>
+        </div>
         <SettingsDrawer
           open={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
