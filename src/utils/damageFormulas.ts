@@ -225,6 +225,7 @@ export interface HandToHandInputs {
   sneakSkill: number; // 0–100, determines sneak multiplier tier
   isPowerAttack: boolean;
   powerAttackType: 'normal' | 'standing';
+  normalWeaponResistance: number; // opponent's Resist Normal Weapons %, 0–100
 }
 
 export interface HandToHandResult {
@@ -234,6 +235,7 @@ export interface HandToHandResult {
   sneakMultiplier: number;
   powerAttackMultiplier: number;
   appliedMultiplier: number; // max(sneak, power) — only the higher applies
+  opponentWeaponResistance: number; // 1 if skill >= 50 (Journeyman bypasses), else (100 - resistance%) / 100
   finalHealthDamage: number;
   finalFatigueDamage: number;
 }
@@ -275,8 +277,18 @@ export function calcHandToHandDamage(inputs: HandToHandInputs): HandToHandResult
   // Only the higher of sneak or power attack applies
   const appliedMultiplier = Math.max(sneakMultiplier, powerAttackMultiplier);
 
-  // Damage is modified by fatigue and the applied attack multiplier
-  const finalHealthDamage = baseHealthDamage * fatigueModifier * appliedMultiplier;
+  // Journeyman (skill >= 50) bypasses Resist Normal Weapons entirely.
+  // Below Journeyman, bare fists are treated as normal weapons and resistance applies.
+  // Source: https://en.uesp.net/wiki/Oblivion:Resist_Normal_Weapons
+  const journeymanOrHigher = clamp(inputs.skill, 0, 100) >= 50;
+  const opponentWeaponResistance = calcOpponentWeaponResistance(
+    inputs.normalWeaponResistance,
+    journeymanOrHigher,
+  );
+
+  // Damage is modified by fatigue, the applied attack multiplier, and weapon resistance
+  const finalHealthDamage =
+    baseHealthDamage * fatigueModifier * appliedMultiplier * opponentWeaponResistance;
 
   // Fatigue_Damage = 1 + 0.5 * Health_Damage
   const finalFatigueDamage = 1 + 0.5 * finalHealthDamage;
@@ -288,6 +300,7 @@ export function calcHandToHandDamage(inputs: HandToHandInputs): HandToHandResult
     sneakMultiplier,
     powerAttackMultiplier,
     appliedMultiplier,
+    opponentWeaponResistance,
     finalHealthDamage,
     finalFatigueDamage,
   };

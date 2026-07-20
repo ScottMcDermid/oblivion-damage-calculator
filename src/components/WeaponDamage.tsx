@@ -627,18 +627,18 @@ export default function WeaponDamage({
           tooltip="Sum of all armor pieces (each scaled by armor skill and condition). Hard-capped at 85."
         />
 
+        <StatInput
+          label="Normal Weapon Resistance"
+          value={normalWeaponResistance}
+          min={0}
+          max={100}
+          onChange={setNormalWeaponResistance}
+          suffix="%"
+          tooltip="Opponent's Resist Normal Weapons %. Has no effect when Bypasses Resistance is enabled."
+        />
+
         <div className="mt-2 space-y-1">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-            <StatInput
-              label="Normal Weapon Resistance"
-              value={normalWeaponResistance}
-              min={0}
-              max={100}
-              onChange={setNormalWeaponResistance}
-              showSlider={false}
-              suffix="%"
-              tooltip="Opponent's Resist Normal Weapons %. Has no effect when Bypasses Resistance is enabled."
-            />
             <FormControlLabel
               control={
                 <Switch
