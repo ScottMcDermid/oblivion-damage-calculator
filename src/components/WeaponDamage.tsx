@@ -422,30 +422,39 @@ export default function WeaponDamage({
           </>
         )}
 
-        <StatInput
-          label={isBow ? 'Base Bow Damage' : 'Base Weapon Damage'}
-          value={baseWeaponDamage}
-          min={0}
-          max={200}
-          onChange={(v) => {
-            setBaseWeaponDamage(v);
-            if (isBow) { setPresetBowMaterial(''); }
-            else { setPresetSubtype(''); setPresetMaterial(''); }
-          }}
-          showSlider={false}
-          tooltip="The damage value shown on the UESP wiki for this weapon"
-        />
+        {!isBow && (
+          <StatInput
+            label="Base Weapon Damage"
+            value={baseWeaponDamage}
+            min={0}
+            max={200}
+            onChange={(v) => { setBaseWeaponDamage(v); setPresetSubtype(''); setPresetMaterial(''); }}
+            showSlider={false}
+            tooltip="The damage value shown on the UESP wiki for this weapon"
+          />
+        )}
 
         {isBow && (
-          <StatInput
-            label="Base Arrow Damage"
-            value={baseArrowDamage}
-            min={0}
-            max={100}
-            onChange={(v) => { setBaseArrowDamage(v); setPresetArrowMaterial(''); }}
-            showSlider={false}
-            tooltip="For bows, WeaponRating = Bow WR + Arrow WR. Enter the base damage of the arrow separately."
-          />
+          <div className="flex flex-wrap gap-x-6 gap-y-1">
+            <StatInput
+              label="Base Bow Damage"
+              value={baseWeaponDamage}
+              min={0}
+              max={200}
+              onChange={(v) => { setBaseWeaponDamage(v); setPresetBowMaterial(''); }}
+              showSlider={false}
+              tooltip="The damage value shown on the UESP wiki for this bow"
+            />
+            <StatInput
+              label="Base Arrow Damage"
+              value={baseArrowDamage}
+              min={0}
+              max={100}
+              onChange={(v) => { setBaseArrowDamage(v); setPresetArrowMaterial(''); }}
+              showSlider={false}
+              tooltip="For bows, WeaponRating = Bow WR + Arrow WR. Enter the base damage of the arrow separately."
+            />
+          </div>
         )}
 
         <StatInput
@@ -494,24 +503,26 @@ export default function WeaponDamage({
           </div>
         ) : (
           <>
-            <StatInput
-              label="Current Fatigue"
-              value={currentFatigue}
-              min={0}
-              max={9999}
-              onChange={setCurrentFatigue}
-              showSlider={false}
-              tooltip="Your current fatigue. Fatigue modifier = (Fatigue / MaxFatigue + 1) / 2"
-            />
-            <StatInput
-              label="Max Fatigue"
-              value={maxFatigue}
-              min={1}
-              max={9999}
-              onChange={setMaxFatigue}
-              showSlider={false}
-              tooltip="Your maximum fatigue (can be buffed above base). A higher max fatigue reduces the fatigue modifier."
-            />
+            <div className="flex flex-wrap gap-x-6 gap-y-1">
+              <StatInput
+                label="Current Fatigue"
+                value={currentFatigue}
+                min={0}
+                max={9999}
+                onChange={setCurrentFatigue}
+                showSlider={false}
+                tooltip="Your current fatigue. Fatigue modifier = (Fatigue / MaxFatigue + 1) / 2"
+              />
+              <StatInput
+                label="Max Fatigue"
+                value={maxFatigue}
+                min={1}
+                max={9999}
+                onChange={setMaxFatigue}
+                showSlider={false}
+                tooltip="Your maximum fatigue (can be buffed above base). A higher max fatigue reduces the fatigue modifier."
+              />
+            </div>
           </>
         )}
 

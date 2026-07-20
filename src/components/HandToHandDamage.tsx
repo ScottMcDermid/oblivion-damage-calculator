@@ -7,8 +7,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import { GiFist } from 'react-icons/gi';
-
 import StatInput from '@/components/StatInput';
 import ResultDisplay from '@/components/ResultDisplay';
 import { calcHandToHandDamage } from '@/utils/damageFormulas';
@@ -135,14 +133,6 @@ export default function HandToHandDamage({
       {/* ── Inputs ── */}
       <div className="min-w-0 flex-1 space-y-1">
 
-        <div className="mb-4 flex items-center gap-2 text-sm text-gray-400">
-          <GiFist className="text-xl text-yellow-400" />
-          <span>
-            Hand to Hand attacks deal health and fatigue damage. Damage scales with Strength, the
-            Hand to Hand skill (modified by Luck), fatigue, sneak attacks, and power attacks.
-          </span>
-        </div>
-
         <SectionHeading>Attacker Stats</SectionHeading>
 
         <StatInput
@@ -176,24 +166,26 @@ export default function HandToHandDamage({
           </div>
         ) : (
           <>
-            <StatInput
-              label="Current Fatigue"
-              value={currentFatigue}
-              min={0}
-              max={9999}
-              onChange={setCurrentFatigue}
-              showSlider={false}
-              tooltip="Your current fatigue. Fatigue modifier = (Fatigue / MaxFatigue + 1) / 2"
-            />
-            <StatInput
-              label="Max Fatigue"
-              value={maxFatigue}
-              min={1}
-              max={9999}
-              onChange={setMaxFatigue}
-              showSlider={false}
-              tooltip="Your maximum fatigue (can be buffed). A higher max fatigue reduces the fatigue modifier."
-            />
+            <div className="flex flex-wrap gap-x-6 gap-y-1">
+              <StatInput
+                label="Current Fatigue"
+                value={currentFatigue}
+                min={0}
+                max={9999}
+                onChange={setCurrentFatigue}
+                showSlider={false}
+                tooltip="Your current fatigue. Fatigue modifier = (Fatigue / MaxFatigue + 1) / 2"
+              />
+              <StatInput
+                label="Max Fatigue"
+                value={maxFatigue}
+                min={1}
+                max={9999}
+                onChange={setMaxFatigue}
+                showSlider={false}
+                tooltip="Your maximum fatigue (can be buffed). A higher max fatigue reduces the fatigue modifier."
+              />
+            </div>
           </>
         )}
 
@@ -275,19 +267,6 @@ export default function HandToHandDamage({
           </div>
         )}
 
-        <div className="mt-4 rounded border border-[#2e2e2e] bg-[#1e1e1e] px-3 py-2 text-xs text-gray-500">
-          <strong className="text-gray-400">Formula:</strong>
-          <br />
-          Health Damage = 1 + 10.5 × (Strength / 100) × (ModifiedSkill / 100)
-          <br />
-          Fatigue Damage = 1 + 0.5 × Health Damage
-          <br />
-          <span className="mt-1 block text-gray-600">
-            {isRemastered
-              ? '(Modified by sneak/power attack multiplier only — fatigue has no effect in Remastered)'
-              : '(Both are then modified by the fatigue modifier and sneak/power attack multiplier)'}
-          </span>
-        </div>
       </div>
 
       {/* ── Result ── */}
