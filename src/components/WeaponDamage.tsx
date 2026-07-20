@@ -32,7 +32,7 @@ import {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-3 mt-5 text-xs font-semibold uppercase tracking-widest text-gray-500 first:mt-0">
+    <div className="mb-3 mt-8 border-t border-[#2e2e2e] pt-4 text-xs font-semibold uppercase tracking-widest text-gray-500 first:mt-0 first:border-0 first:pt-0">
       {children}
     </div>
   );
@@ -283,10 +283,11 @@ export default function WeaponDamage({
       {/* ── Inputs ── */}
       <div className="min-w-0 flex-1 space-y-1">
 
+        <SectionHeading>Weapon</SectionHeading>
+
         {/* ── Preset selector — melee ── */}
         {!isBow && (
           <>
-            <SectionHeading>Weapon Preset</SectionHeading>
             <div className="flex flex-wrap items-start gap-3">
               <div>
                 <div className="mb-1 text-xs text-gray-500">Weapon</div>
@@ -347,13 +348,13 @@ export default function WeaponDamage({
                 </div>
               )}
             </div>
+            <Divider sx={{ my: 1.5, borderColor: '#2e2e2e' }} />
           </>
         )}
 
         {/* ── Preset selector — bow + arrow ── */}
         {isBow && (
           <>
-            <SectionHeading>Bow &amp; Arrow Preset</SectionHeading>
             <div className="flex flex-wrap items-start gap-3">
               <div>
                 <div className="mb-1 text-xs text-gray-500">Bow</div>
@@ -402,11 +403,9 @@ export default function WeaponDamage({
             <p className="mt-1 text-xs text-gray-600">
               All bows bypass Resist Normal Weapons regardless of material.
             </p>
+            <Divider sx={{ my: 1.5, borderColor: '#2e2e2e' }} />
           </>
         )}
-
-        {/* ── Weapon stats ── */}
-        <SectionHeading>Weapon</SectionHeading>
 
         <StatInput
           label={isBow ? 'Base Bow Damage' : 'Base Weapon Damage'}
