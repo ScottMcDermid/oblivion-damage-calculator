@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Slider, Tooltip } from '@mui/material';
 
 interface StatInputProps {
@@ -27,16 +27,39 @@ export default function StatInput({
   tooltip,
   suffix,
 }: StatInputProps) {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
+  const [localValue, setLocalValue] = useState(String(value));
+  const isFocused = useRef(false);
+
+  // Sync from parent (e.g. slider, preset selection) only when the input is not focused
+  useEffect(() => {
+    if (!isFocused.current) {
+      setLocalValue(String(value));
+    }
+  }, [value]);
+
+  const commit = (raw: string) => {
     if (raw === '' || raw === '-') {
       onChange(min);
+      setLocalValue(String(min));
       return;
     }
     const parsed = parseInt(raw, 10);
-    if (!isNaN(parsed)) {
-      onChange(Math.max(min, Math.min(max, parsed)));
-    }
+    const clamped = isNaN(parsed) ? min : Math.max(min, Math.min(max, parsed));
+    onChange(clamped);
+    setLocalValue(String(clamped));
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalValue(e.target.value);
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    isFocused.current = false;
+    commit(e.target.value);
+  };
+
+  const handleFocus = () => {
+    isFocused.current = true;
   };
 
   const labelEl = (
@@ -62,8 +85,10 @@ export default function StatInput({
           min={min}
           max={max}
           step={step}
-          value={value}
-          onChange={handleInputChange}
+          value={localValue}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onFocus={handleFocus}
           className="w-20 rounded border border-[#2e2e2e] bg-transparent px-2 py-0.5 text-right text-sm text-gray-100
                      [appearance:textfield] focus:border-gray-500 focus:outline-none
                      [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
