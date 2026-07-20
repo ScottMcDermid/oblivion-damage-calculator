@@ -258,7 +258,7 @@ export default function WeaponDamage({
     {
       label: `Difficulty Multiplier${difficultyMultiplier === 1 ? ' (default)' : ''}`,
       value: difficultyMultiplier,
-      tooltip: `Adjustable in Settings. Formula: 5^(−difficulty/100). ×${difficultyMultiplier.toFixed(3)}`,
+      tooltip: `Adjustable in Settings. ×${difficultyMultiplier.toFixed(3)}`,
     },
     {
       label: 'Final Damage',

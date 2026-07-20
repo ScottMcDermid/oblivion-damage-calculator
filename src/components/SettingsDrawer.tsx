@@ -103,7 +103,6 @@ function SettingsContent({
         </div>
         <p className="mt-2 text-xs text-gray-400">
           Difficulty multiplier applied to all final damage outputs.
-          Formula: 5^(−difficulty / 100).
         </p>
       </div>
     </div>

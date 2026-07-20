@@ -135,7 +135,7 @@ export default function HandToHandDamage({
     {
       label: `Difficulty Multiplier${difficultyMultiplier === 1 ? ' (default)' : ''}`,
       value: difficultyMultiplier,
-      tooltip: `Adjustable in Settings. Formula: 6^(−difficulty/100). ×${difficultyMultiplier.toFixed(3)}`,
+      tooltip: `Adjustable in Settings. ×${difficultyMultiplier.toFixed(3)}`,
     },
     {
       label: 'Final Health Damage',
