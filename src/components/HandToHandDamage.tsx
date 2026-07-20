@@ -24,16 +24,27 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 interface HandToHandDamageProps {
   isRemastered: boolean;
   difficultyMultiplier: number;
+  isSneaking: boolean;
+  // eslint-disable-next-line no-unused-vars
+  onSneakingChange: (v: boolean) => void;
+  sneakSkill: number;
+  // eslint-disable-next-line no-unused-vars
+  onSneakSkillChange: (v: number) => void;
 }
 
-export default function HandToHandDamage({ isRemastered, difficultyMultiplier }: HandToHandDamageProps) {
+export default function HandToHandDamage({
+  isRemastered,
+  difficultyMultiplier,
+  isSneaking,
+  onSneakingChange,
+  sneakSkill,
+  onSneakSkillChange,
+}: HandToHandDamageProps) {
   const [strength, setStrength] = useState(50);
   const [skill, setSkill] = useState(25);
   const [luck, setLuck] = useState(50);
   const [currentFatigue, setCurrentFatigue] = useState(200);
   const [maxFatigue, setMaxFatigue] = useState(200);
-  const [isSneaking, setIsSneaking] = useState(false);
-  const [sneakSkill, setSneakSkill] = useState(25);
   const [isPowerAttack, setIsPowerAttack] = useState(false);
   const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
 
@@ -194,7 +205,7 @@ export default function HandToHandDamage({ isRemastered, difficultyMultiplier }:
               <Switch
                 size="small"
                 checked={isSneaking}
-                onChange={(e) => setIsSneaking(e.target.checked)}
+                onChange={(e) => onSneakingChange(e.target.checked)}
                 color="secondary"
               />
             }
@@ -220,7 +231,7 @@ export default function HandToHandDamage({ isRemastered, difficultyMultiplier }:
               value={sneakSkill}
               min={0}
               max={100}
-              onChange={setSneakSkill}
+              onChange={onSneakSkillChange}
               tooltip="Determines sneak attack tier (25+ = Apprentice) and the Master Sneak perk (100 = bypasses opponent armor while sneaking)"
             />
             <div className="text-xs text-gray-500">

@@ -47,6 +47,12 @@ interface WeaponDamageProps {
   onWeaponTypeChange: (newType: WeaponType) => void;
   isRemastered: boolean;
   difficultyMultiplier: number;
+  isSneaking: boolean;
+  // eslint-disable-next-line no-unused-vars
+  onSneakingChange: (v: boolean) => void;
+  sneakSkill: number;
+  // eslint-disable-next-line no-unused-vars
+  onSneakSkillChange: (v: number) => void;
 }
 
 export default function WeaponDamage({
@@ -54,6 +60,10 @@ export default function WeaponDamage({
   onWeaponTypeChange,
   isRemastered,
   difficultyMultiplier,
+  isSneaking,
+  onSneakingChange,
+  sneakSkill,
+  onSneakSkillChange,
 }: WeaponDamageProps) {
 
   // ── Melee preset state ──
@@ -80,8 +90,6 @@ export default function WeaponDamage({
   const [maxFatigue, setMaxFatigue] = useState(200);
 
   // ── Attack modifiers ──
-  const [isSneaking, setIsSneaking] = useState(false);
-  const [sneakSkill, setSneakSkill] = useState(25);
   const [isPowerAttack, setIsPowerAttack] = useState(false);
   const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
 
@@ -515,7 +523,7 @@ export default function WeaponDamage({
               <Switch
                 size="small"
                 checked={isSneaking}
-                onChange={(e) => setIsSneaking(e.target.checked)}
+                onChange={(e) => onSneakingChange(e.target.checked)}
                 color="secondary"
               />
             }
@@ -543,7 +551,7 @@ export default function WeaponDamage({
               value={sneakSkill}
               min={0}
               max={100}
-              onChange={setSneakSkill}
+              onChange={onSneakSkillChange}
               tooltip="Determines sneak attack tier (25+ = Apprentice) and the Master Sneak perk (100 = bypasses opponent armor while sneaking)"
             />
             {!isTwoHanded && (

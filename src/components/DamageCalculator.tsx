@@ -50,6 +50,10 @@ export default function DamageCalculator() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('blade');
   const [lastWeaponTab, setLastWeaponTab] = useState<Exclude<ActiveTab, 'h2h'>>('blade');
 
+  // Shared sneak state — same character across all attack types
+  const [isSneaking, setIsSneaking] = useState(false);
+  const [sneakSkill, setSneakSkill] = useState(25);
+
   // Settings
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRemastered, setIsRemastered] = useState(false);
@@ -148,12 +152,20 @@ export default function DamageCalculator() {
               onWeaponTypeChange={handleWeaponTypeChange}
               isRemastered={isRemastered}
               difficultyMultiplier={difficultyMultiplier}
+              isSneaking={isSneaking}
+              onSneakingChange={setIsSneaking}
+              sneakSkill={sneakSkill}
+              onSneakSkillChange={setSneakSkill}
             />
           </div>
           <div style={{ display: isWeapon ? 'none' : undefined }}>
             <HandToHandDamage
               isRemastered={isRemastered}
               difficultyMultiplier={difficultyMultiplier}
+              isSneaking={isSneaking}
+              onSneakingChange={setIsSneaking}
+              sneakSkill={sneakSkill}
+              onSneakSkillChange={setSneakSkill}
             />
           </div>
         </main>
