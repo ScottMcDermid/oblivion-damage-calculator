@@ -5,7 +5,6 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
-  ListSubheader,
   MenuItem,
   Select,
   Switch,
@@ -62,8 +61,8 @@ export default function WeaponDamage({
   const [presetMaterial, setPresetMaterial] = useState<WeaponMaterial | ''>(DEFAULT_MATERIAL);
 
   // ── Bow/arrow preset state ──
-  const [presetBowMaterial, setPresetBowMaterial] = useState<WeaponMaterial>(DEFAULT_MATERIAL);
-  const [presetArrowMaterial, setPresetArrowMaterial] = useState<WeaponMaterial>(DEFAULT_MATERIAL);
+  const [presetBowMaterial, setPresetBowMaterial] = useState<WeaponMaterial | ''>(DEFAULT_MATERIAL);
+  const [presetArrowMaterial, setPresetArrowMaterial] = useState<WeaponMaterial | ''>(DEFAULT_MATERIAL);
 
   // ── Weapon stats ──
   const [baseWeaponDamage, setBaseWeaponDamage] = useState(() => {
@@ -270,6 +269,7 @@ export default function WeaponDamage({
   })();
 
   const bowSummary = (() => {
+    if (!presetBowMaterial || !presetArrowMaterial) return null;
     const bow = getBowPreset(presetBowMaterial);
     const arrow = getArrowPreset(presetArrowMaterial);
     return {
@@ -302,13 +302,7 @@ export default function WeaponDamage({
                       Custom
                     </MenuItem>
                     <Divider />
-                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem' }}>Blade</ListSubheader>
-                    {BLADE_SUBTYPES.map((s) => (
-                      <MenuItem key={s} value={s} sx={{ fontSize: '0.8rem' }}>{s}</MenuItem>
-                    ))}
-                    <Divider />
-                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem' }}>Blunt</ListSubheader>
-                    {BLUNT_SUBTYPES.map((s) => (
+                    {(weaponType === 'Blade' ? BLADE_SUBTYPES : BLUNT_SUBTYPES).map((s) => (
                       <MenuItem key={s} value={s} sx={{ fontSize: '0.8rem' }}>{s}</MenuItem>
                     ))}
                   </Select>
@@ -361,13 +355,18 @@ export default function WeaponDamage({
                 <FormControl size="small" sx={{ minWidth: 140 }}>
                   <Select
                     value={presetBowMaterial}
+                    displayEmpty
                     onChange={(e) => {
-                      const mat = e.target.value as WeaponMaterial;
+                      const mat = e.target.value as WeaponMaterial | '';
                       setPresetBowMaterial(mat);
-                      applyBowPreset(mat, presetArrowMaterial);
+                      if (mat && presetArrowMaterial) applyBowPreset(mat, presetArrowMaterial);
                     }}
                     sx={{ fontSize: '0.8rem' }}
                   >
+                    <MenuItem value="" sx={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'text.secondary' }}>
+                      Custom
+                    </MenuItem>
+                    <Divider />
                     {MATERIALS.map((m) => (
                       <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Bow</MenuItem>
                     ))}
@@ -380,13 +379,18 @@ export default function WeaponDamage({
                 <FormControl size="small" sx={{ minWidth: 140 }}>
                   <Select
                     value={presetArrowMaterial}
+                    displayEmpty
                     onChange={(e) => {
-                      const mat = e.target.value as WeaponMaterial;
+                      const mat = e.target.value as WeaponMaterial | '';
                       setPresetArrowMaterial(mat);
-                      applyBowPreset(presetBowMaterial, mat);
+                      if (presetBowMaterial && mat) applyBowPreset(presetBowMaterial, mat);
                     }}
                     sx={{ fontSize: '0.8rem' }}
                   >
+                    <MenuItem value="" sx={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'text.secondary' }}>
+                      Custom
+                    </MenuItem>
+                    <Divider />
                     {MATERIALS.map((m) => (
                       <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Arrow</MenuItem>
                     ))}
@@ -394,11 +398,13 @@ export default function WeaponDamage({
                 </FormControl>
               </div>
 
-              <div className="flex flex-col">
-                <div className="mb-1 text-xs text-gray-500 opacity-0 select-none">_</div>
-                <span className="text-xs font-semibold text-yellow-300">{bowSummary.label}</span>
-                <span className="text-xs text-gray-500">{bowSummary.detail}</span>
-              </div>
+              {bowSummary && (
+                <div className="flex flex-col">
+                  <div className="mb-1 text-xs text-gray-500 opacity-0 select-none">_</div>
+                  <span className="text-xs font-semibold text-yellow-300">{bowSummary.label}</span>
+                  <span className="text-xs text-gray-500">{bowSummary.detail}</span>
+                </div>
+              )}
             </div>
             <p className="mt-1 text-xs text-gray-600">
               All bows bypass Resist Normal Weapons regardless of material.
@@ -414,7 +420,8 @@ export default function WeaponDamage({
           max={200}
           onChange={(v) => {
             setBaseWeaponDamage(v);
-            if (!isBow) { setPresetSubtype(''); setPresetMaterial(''); }
+            if (isBow) { setPresetBowMaterial(''); }
+            else { setPresetSubtype(''); setPresetMaterial(''); }
           }}
           showSlider={false}
           tooltip="The damage value shown on the UESP wiki for this weapon"
@@ -426,7 +433,7 @@ export default function WeaponDamage({
             value={baseArrowDamage}
             min={0}
             max={100}
-            onChange={setBaseArrowDamage}
+            onChange={(v) => { setBaseArrowDamage(v); setPresetArrowMaterial(''); }}
             showSlider={false}
             tooltip="For bows, WeaponRating = Bow WR + Arrow WR. Enter the base damage of the arrow separately."
           />
