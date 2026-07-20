@@ -202,7 +202,7 @@ export default function WeaponDamage({
       value: result.fatigueModifier,
       tooltip: isRemastered
         ? 'Fatigue does not affect damage in Oblivion Remastered'
-        : '(CurrentFatigue / MaxFatigue + 1) / 2 — ranges 0.5 to 1.0',
+        : '(CurrentFatigue / MaxFatigue + 1) / 2 — minimum 0.5, no upper cap. Current fatigue above max fatigue yields a multiplier > 1.',
     },
     {
       label: `Sneak Multiplier${!isSneaking ? ' (not sneaking)' : ''}`,

@@ -73,7 +73,7 @@ export default function HandToHandDamage({ isRemastered, difficultyMultiplier }:
       value: rawResult.fatigueModifier,
       tooltip: isRemastered
         ? 'Fatigue does not affect damage in Oblivion Remastered'
-        : '(CurrentFatigue / MaxFatigue + 1) / 2 — ranges 0.5 to 1.0',
+        : '(CurrentFatigue / MaxFatigue + 1) / 2 — minimum 0.5, no upper cap. Current fatigue above max fatigue yields a multiplier > 1.',
     },
     {
       label: `Power Attack Multiplier${!isPowerAttack ? ' (none)' : ''}`,

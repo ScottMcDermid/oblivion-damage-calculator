@@ -77,11 +77,12 @@ export function calcWeaponRating(
 
 /**
  * FatigueModifier = (Fatigue / MaxFatigue + 1) / 2
- * Ranges from 0.5 (fatigue = 0) to 1.0 (fatigue = maxFatigue).
+ * Minimum 0.5 (fatigue = 0). No upper cap — if Fatigue > MaxFatigue the modifier exceeds 1.0.
+ * This is intentional: reducing MaxFatigue below current fatigue increases damage output.
  */
 export function calcFatigueModifier(currentFatigue: number, maxFatigue: number): number {
   if (maxFatigue <= 0) return 0.5;
-  return (clamp(currentFatigue, 0, maxFatigue) / maxFatigue + 1) / 2;
+  return (Math.max(0, currentFatigue) / maxFatigue + 1) / 2;
 }
 
 /**
