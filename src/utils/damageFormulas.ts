@@ -225,6 +225,8 @@ export interface HandToHandInputs {
   sneakSkill: number; // 0–100, determines sneak multiplier tier
   isPowerAttack: boolean;
   powerAttackType: 'normal' | 'standing';
+  combinedArmorRating: number; // opponent's combined armor rating, 0–85 (hard-capped)
+  hasMasterSneakPerk: boolean; // true when sneakSkill >= 100; bypasses opponent armor while sneaking
   normalWeaponResistance: number; // opponent's Resist Normal Weapons %, 0–100
   isSilverDaedricOrEnchanted: boolean; // enchanted gauntlets/bracers bypass resistance regardless of skill
 }
@@ -236,6 +238,7 @@ export interface HandToHandResult {
   sneakMultiplier: number;
   powerAttackMultiplier: number;
   appliedMultiplier: number; // max(sneak, power) — only the higher applies
+  opponentArmorRating: number; // (100 - CombinedAR) / 100, AR capped at 85; 1 if Master Sneak perk while sneaking
   opponentWeaponResistance: number; // 1 if skill >= 50 (Journeyman) or isSilverDaedricOrEnchanted, else (100 - resistance%) / 100
   finalHealthDamage: number;
   finalFatigueDamage: number;
@@ -278,6 +281,14 @@ export function calcHandToHandDamage(inputs: HandToHandInputs): HandToHandResult
   // Only the higher of sneak or power attack applies
   const appliedMultiplier = Math.max(sneakMultiplier, powerAttackMultiplier);
 
+  // Armor rating applies to H2H the same as weapon attacks. Master Sneak perk bypasses it
+  // while sneaking (attacker-side perk, not weapon-specific).
+  const opponentArmorRating = calcOpponentArmorRating(
+    inputs.combinedArmorRating,
+    inputs.hasMasterSneakPerk,
+    inputs.isSneaking,
+  );
+
   // Resistance is bypassed if the attacker is Journeyman (skill >= 50) or wearing enchanted
   // gauntlets/bracers (e.g. Hands of Midnight). Enchanted equipment bypasses resistance the
   // same way Silver/Daedric/enchanted weapons do for conventional weapon attacks.
@@ -288,9 +299,9 @@ export function calcHandToHandDamage(inputs: HandToHandInputs): HandToHandResult
     bypassesResistance,
   );
 
-  // Damage is modified by fatigue, the applied attack multiplier, and weapon resistance
+  // Damage is modified by fatigue, the applied attack multiplier, armor rating, and weapon resistance
   const finalHealthDamage =
-    baseHealthDamage * fatigueModifier * appliedMultiplier * opponentWeaponResistance;
+    baseHealthDamage * fatigueModifier * appliedMultiplier * opponentArmorRating * opponentWeaponResistance;
 
   // Fatigue_Damage = 1 + 0.5 * Health_Damage
   const finalFatigueDamage = 1 + 0.5 * finalHealthDamage;
@@ -302,6 +313,7 @@ export function calcHandToHandDamage(inputs: HandToHandInputs): HandToHandResult
     sneakMultiplier,
     powerAttackMultiplier,
     appliedMultiplier,
+    opponentArmorRating,
     opponentWeaponResistance,
     finalHealthDamage,
     finalFatigueDamage,

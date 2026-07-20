@@ -46,6 +46,7 @@ export default function HandToHandDamage({
   const [maxFatigue, setMaxFatigue] = useState(200);
   const [isPowerAttack, setIsPowerAttack] = useState(false);
   const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
+  const [combinedArmorRating, setCombinedArmorRating] = useState(0);
   const [normalWeaponResistance, setNormalWeaponResistance] = useState(0);
   const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useState(false);
 
@@ -64,11 +65,14 @@ export default function HandToHandDamage({
         sneakSkill,
         isPowerAttack,
         powerAttackType,
+        combinedArmorRating,
+        hasMasterSneakPerk,
         normalWeaponResistance,
         isSilverDaedricOrEnchanted,
       }),
     [strength, skill, luck, isRemastered, currentFatigue, maxFatigue,
-     isSneaking, sneakSkill, isPowerAttack, powerAttackType, normalWeaponResistance, isSilverDaedricOrEnchanted],
+     isSneaking, sneakSkill, isPowerAttack, powerAttackType, combinedArmorRating,
+     hasMasterSneakPerk, normalWeaponResistance, isSilverDaedricOrEnchanted],
   );
 
   // Apply difficulty multiplier
@@ -110,6 +114,13 @@ export default function HandToHandDamage({
       label: 'Applied Multiplier (max of above)',
       value: rawResult.appliedMultiplier,
       tooltip: 'Only the higher of sneak or power attack multiplier applies',
+    },
+    {
+      label: 'Opponent Armor Rating',
+      value: rawResult.opponentArmorRating,
+      tooltip: hasMasterSneakPerk
+        ? 'Sneak = 100 (Master perk) bypasses opponent armor while sneaking (= 1)'
+        : '(100 − CombinedArmorRating) / 100, AR capped at 85',
     },
     {
       label: `Weapon Resistance${(skill >= 50 || isSilverDaedricOrEnchanted) ? ' (bypassed)' : ''}`,
@@ -280,6 +291,15 @@ export default function HandToHandDamage({
         <SectionHeading>Opponent</SectionHeading>
 
         <StatInput
+          label="Combined Armor Rating"
+          value={combinedArmorRating}
+          min={0}
+          max={85}
+          onChange={setCombinedArmorRating}
+          tooltip="Sum of all armor pieces (each scaled by armor skill and condition). Hard-capped at 85."
+        />
+
+        <StatInput
           label="Normal Weapon Resistance"
           value={normalWeaponResistance}
           min={0}
@@ -328,9 +348,7 @@ export default function HandToHandDamage({
             ]}
             breakdown={breakdown}
           />
-          <div className="mt-3 text-xs text-gray-600">
-            Note: opponent armor rating is not yet modeled for H2H (same formula as weapon attacks applies).
-          </div>
+
         </div>
       </div>
     </div>
