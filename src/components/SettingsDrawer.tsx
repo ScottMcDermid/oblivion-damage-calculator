@@ -38,7 +38,7 @@ function SettingsContent({
     <div className="space-y-6 p-4">
       {/* Version toggle */}
       <div>
-        <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">
+        <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
           Version
         </div>
         <ToggleButtonGroup
@@ -57,7 +57,7 @@ function SettingsContent({
             Remastered
           </ToggleButton>
         </ToggleButtonGroup>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-gray-400">
           {isRemastered
             ? 'Fatigue does not affect melee damage in Oblivion Remastered.'
             : 'Fatigue reduces damage: modifier = (Fatigue / MaxFatigue + 1) / 2.'}
@@ -69,14 +69,14 @@ function SettingsContent({
       {/* Difficulty slider */}
       <div>
         <div className="mb-1 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+          <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
             Difficulty
           </span>
           <span className="font-mono text-sm font-semibold text-yellow-300">
             ×{difficultyMultiplier.toFixed(3)}
           </span>
         </div>
-        <div className="mb-1 text-center text-xs text-gray-400">
+        <div className="mb-1 text-center text-xs text-gray-300">
           {difficulty === 0
             ? 'Default'
             : difficulty < 0
@@ -96,12 +96,12 @@ function SettingsContent({
           ]}
           sx={{ color: 'secondary.main' }}
         />
-        <div className="flex justify-between text-xs text-gray-600">
+        <div className="flex justify-between text-xs text-gray-400">
           <span>Easiest (×6)</span>
           <span>Default (×1)</span>
           <span>Hardest (×⅙)</span>
         </div>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-gray-400">
           Difficulty multiplier applied to all final damage outputs.
           Formula: 5^(−difficulty / 100).
         </p>

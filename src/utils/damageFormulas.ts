@@ -221,6 +221,8 @@ export interface HandToHandInputs {
   luck: number; // 0–100 (includes fortify effects)
   currentFatigue: number;
   maxFatigue: number;
+  isSneaking: boolean;
+  sneakSkill: number; // 0–100, determines sneak multiplier tier
   isPowerAttack: boolean;
   powerAttackType: 'normal' | 'standing';
 }
@@ -229,7 +231,9 @@ export interface HandToHandResult {
   modifiedSkill: number;
   baseHealthDamage: number;
   fatigueModifier: number;
+  sneakMultiplier: number;
   powerAttackMultiplier: number;
+  appliedMultiplier: number; // max(sneak, power) — only the higher applies
   finalHealthDamage: number;
   finalFatigueDamage: number;
 }
@@ -254,22 +258,36 @@ export function calcHandToHandDamage(inputs: HandToHandInputs): HandToHandResult
   const baseHealthDamage = 1 + 10.5 * (str / 100) * (modifiedSkill / 100);
 
   const fatigueModifier = calcFatigueModifier(inputs.currentFatigue, inputs.maxFatigue);
+
+  // H2H gets the same sneak multiplier as one-handed weapons (4× Novice, 6× Apprentice+)
+  const sneakMultiplier = calcSneakMultiplier(
+    inputs.isSneaking,
+    inputs.sneakSkill,
+    false, // not a bow
+    false, // not two-handed
+  );
+
   const powerAttackMultiplier = calcPowerAttackMultiplier(
     inputs.isPowerAttack,
     inputs.powerAttackType,
   );
 
-  // Damage is modified by same fatigue and power attack multipliers as weapon
-  const finalHealthDamage = baseHealthDamage * fatigueModifier * powerAttackMultiplier;
+  // Only the higher of sneak or power attack applies
+  const appliedMultiplier = Math.max(sneakMultiplier, powerAttackMultiplier);
 
-  // Fatigue_Damage = 1 + 0.5 * Health_Damage (uses base before multipliers per wiki)
+  // Damage is modified by fatigue and the applied attack multiplier
+  const finalHealthDamage = baseHealthDamage * fatigueModifier * appliedMultiplier;
+
+  // Fatigue_Damage = 1 + 0.5 * Health_Damage
   const finalFatigueDamage = 1 + 0.5 * finalHealthDamage;
 
   return {
     modifiedSkill,
     baseHealthDamage,
     fatigueModifier,
+    sneakMultiplier,
     powerAttackMultiplier,
+    appliedMultiplier,
     finalHealthDamage,
     finalFatigueDamage,
   };
