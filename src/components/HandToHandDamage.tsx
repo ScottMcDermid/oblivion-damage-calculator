@@ -29,6 +29,26 @@ interface HandToHandDamageProps {
   sneakSkill: number;
   // eslint-disable-next-line no-unused-vars
   onSneakSkillChange: (v: number) => void;
+  // Shared character stats
+  strength: number;
+  // eslint-disable-next-line no-unused-vars
+  onStrengthChange: (v: number) => void;
+  luck: number;
+  // eslint-disable-next-line no-unused-vars
+  onLuckChange: (v: number) => void;
+  currentFatigue: number;
+  // eslint-disable-next-line no-unused-vars
+  onCurrentFatigueChange: (v: number) => void;
+  maxFatigue: number;
+  // eslint-disable-next-line no-unused-vars
+  onMaxFatigueChange: (v: number) => void;
+  // Shared opponent stats
+  combinedArmorRating: number;
+  // eslint-disable-next-line no-unused-vars
+  onCombinedArmorRatingChange: (v: number) => void;
+  normalWeaponResistance: number;
+  // eslint-disable-next-line no-unused-vars
+  onNormalWeaponResistanceChange: (v: number) => void;
 }
 
 export default function HandToHandDamage({
@@ -38,16 +58,22 @@ export default function HandToHandDamage({
   onSneakingChange,
   sneakSkill,
   onSneakSkillChange,
+  strength,
+  onStrengthChange,
+  luck,
+  onLuckChange,
+  currentFatigue,
+  onCurrentFatigueChange,
+  maxFatigue,
+  onMaxFatigueChange,
+  combinedArmorRating,
+  onCombinedArmorRatingChange,
+  normalWeaponResistance,
+  onNormalWeaponResistanceChange,
 }: HandToHandDamageProps) {
-  const [strength, setStrength] = useState(50);
   const [skill, setSkill] = useState(25);
-  const [luck, setLuck] = useState(50);
-  const [currentFatigue, setCurrentFatigue] = useState(200);
-  const [maxFatigue, setMaxFatigue] = useState(200);
   const [isPowerAttack, setIsPowerAttack] = useState(false);
   const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
-  const [combinedArmorRating, setCombinedArmorRating] = useState(0);
-  const [normalWeaponResistance, setNormalWeaponResistance] = useState(0);
   const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useState(false);
   const wasManuallyEnabled = useRef(false);
 
@@ -173,7 +199,7 @@ export default function HandToHandDamage({
           value={strength}
           min={0}
           max={100}
-          onChange={setStrength}
+          onChange={onStrengthChange}
           tooltip="Governs H2H health damage output"
         />
         <StatInput
@@ -189,7 +215,7 @@ export default function HandToHandDamage({
           value={luck}
           min={0}
           max={100}
-          onChange={setLuck}
+          onChange={onLuckChange}
           tooltip="Modifies effective skill: ModifiedSkill = Skill + 0.4 × (Luck − 50)"
         />
 
@@ -205,7 +231,7 @@ export default function HandToHandDamage({
                 value={currentFatigue}
                 min={0}
                 max={9999}
-                onChange={setCurrentFatigue}
+                onChange={onCurrentFatigueChange}
                 showSlider={false}
                 tooltip="Your current fatigue. Fatigue modifier = (Fatigue / MaxFatigue + 1) / 2"
               />
@@ -214,7 +240,7 @@ export default function HandToHandDamage({
                 value={maxFatigue}
                 min={1}
                 max={9999}
-                onChange={setMaxFatigue}
+                onChange={onMaxFatigueChange}
                 showSlider={false}
                 tooltip="Your maximum fatigue (can be buffed). A higher max fatigue reduces the fatigue modifier."
               />
@@ -307,7 +333,7 @@ export default function HandToHandDamage({
           value={combinedArmorRating}
           min={0}
           max={85}
-          onChange={setCombinedArmorRating}
+          onChange={onCombinedArmorRatingChange}
           tooltip="Sum of all armor pieces (each scaled by armor skill and condition). Hard-capped at 85."
         />
 
@@ -316,7 +342,7 @@ export default function HandToHandDamage({
           value={normalWeaponResistance}
           min={0}
           max={100}
-          onChange={setNormalWeaponResistance}
+          onChange={onNormalWeaponResistanceChange}
           suffix="%"
           tooltip="Opponent's Resist Normal Weapons %. Has no effect when Bypasses Resistance is enabled."
         />

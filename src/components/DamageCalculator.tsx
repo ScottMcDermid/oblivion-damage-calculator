@@ -50,9 +50,17 @@ export default function DamageCalculator() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('blade');
   const [lastWeaponTab, setLastWeaponTab] = useState<Exclude<ActiveTab, 'h2h'>>('blade');
 
-  // Shared sneak state — same character across all attack types
+  // Shared character stats — same character across all attack types
   const [isSneaking, setIsSneaking] = useState(false);
   const [sneakSkill, setSneakSkill] = useState(25);
+  const [strength, setStrength] = useState(50);
+  const [luck, setLuck] = useState(50);
+  const [currentFatigue, setCurrentFatigue] = useState(200);
+  const [maxFatigue, setMaxFatigue] = useState(200);
+
+  // Shared opponent stats — same opponent across all attack types
+  const [combinedArmorRating, setCombinedArmorRating] = useState(0);
+  const [normalWeaponResistance, setNormalWeaponResistance] = useState(0);
 
   // Settings
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -156,6 +164,18 @@ export default function DamageCalculator() {
               onSneakingChange={setIsSneaking}
               sneakSkill={sneakSkill}
               onSneakSkillChange={setSneakSkill}
+              strength={strength}
+              onStrengthChange={setStrength}
+              luck={luck}
+              onLuckChange={setLuck}
+              currentFatigue={currentFatigue}
+              onCurrentFatigueChange={setCurrentFatigue}
+              maxFatigue={maxFatigue}
+              onMaxFatigueChange={setMaxFatigue}
+              combinedArmorRating={combinedArmorRating}
+              onCombinedArmorRatingChange={setCombinedArmorRating}
+              normalWeaponResistance={normalWeaponResistance}
+              onNormalWeaponResistanceChange={setNormalWeaponResistance}
             />
           </div>
           <div style={{ display: isWeapon ? 'none' : undefined }}>
@@ -166,6 +186,18 @@ export default function DamageCalculator() {
               onSneakingChange={setIsSneaking}
               sneakSkill={sneakSkill}
               onSneakSkillChange={setSneakSkill}
+              strength={strength}
+              onStrengthChange={setStrength}
+              luck={luck}
+              onLuckChange={setLuck}
+              currentFatigue={currentFatigue}
+              onCurrentFatigueChange={setCurrentFatigue}
+              maxFatigue={maxFatigue}
+              onMaxFatigueChange={setMaxFatigue}
+              combinedArmorRating={combinedArmorRating}
+              onCombinedArmorRatingChange={setCombinedArmorRating}
+              normalWeaponResistance={normalWeaponResistance}
+              onNormalWeaponResistanceChange={setNormalWeaponResistance}
             />
           </div>
         </main>
