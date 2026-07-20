@@ -6,6 +6,7 @@ import {
   Switch,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
 } from '@mui/material';
 import StatInput from '@/components/StatInput';
 import ResultDisplay from '@/components/ResultDisplay';
@@ -46,6 +47,7 @@ export default function HandToHandDamage({
   const [isPowerAttack, setIsPowerAttack] = useState(false);
   const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
   const [normalWeaponResistance, setNormalWeaponResistance] = useState(0);
+  const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useState(false);
 
   const hasMasterSneakPerk = isSneaking && sneakSkill >= 100;
 
@@ -63,9 +65,10 @@ export default function HandToHandDamage({
         isPowerAttack,
         powerAttackType,
         normalWeaponResistance,
+        isSilverDaedricOrEnchanted,
       }),
     [strength, skill, luck, isRemastered, currentFatigue, maxFatigue,
-     isSneaking, sneakSkill, isPowerAttack, powerAttackType, normalWeaponResistance],
+     isSneaking, sneakSkill, isPowerAttack, powerAttackType, normalWeaponResistance, isSilverDaedricOrEnchanted],
   );
 
   // Apply difficulty multiplier
@@ -109,11 +112,9 @@ export default function HandToHandDamage({
       tooltip: 'Only the higher of sneak or power attack multiplier applies',
     },
     {
-      label: `Weapon Resistance${skill >= 50 ? ' (bypassed)' : ''}`,
+      label: `Weapon Resistance${(skill >= 50 || isSilverDaedricOrEnchanted) ? ' (bypassed)' : ''}`,
       value: rawResult.opponentWeaponResistance,
-      tooltip: skill >= 50
-        ? 'Journeyman H2H (skill ≥ 50) bypasses Resist Normal Weapons — multiplier is always 1'
-        : 'Below Journeyman, bare fists are treated as normal weapons: (100 − NormalWeaponResistance%) / 100',
+      tooltip: 'Journeyman H2H (skill ≥ 50) or enchanted gauntlets/bracers bypass Resist Normal Weapons (= 1). Otherwise: (100 − NormalWeaponResistance%) / 100',
     },
     {
       label: 'Pre-difficulty Health Damage',
@@ -285,13 +286,34 @@ export default function HandToHandDamage({
           max={100}
           onChange={setNormalWeaponResistance}
           suffix="%"
-          tooltip="Opponent's Resist Normal Weapons %. Has no effect when H2H skill is ≥ 50 (Journeyman perk bypasses resistance)."
+          tooltip="Opponent's Resist Normal Weapons %. Has no effect when Bypasses Resistance is enabled."
         />
-        {skill >= 50 && (
-          <div className="rounded border border-[#2e2e2e] bg-[#1e1e1e] px-3 py-2 text-xs text-yellow-400">
-            Journeyman perk active — H2H attacks bypass Resist Normal Weapons.
+
+        <div className="mt-2 space-y-1">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={isSilverDaedricOrEnchanted}
+                  onChange={(e) => setIsSilverDaedricOrEnchanted(e.target.checked)}
+                  color="secondary"
+                />
+              }
+              label={
+                <Tooltip
+                  title="Enchanted gauntlets or bracers (e.g. Hands of Midnight) bypass Resist Normal Weapons regardless of skill. Also bypassed automatically at Journeyman skill (≥ 50)."
+                  arrow
+                >
+                  <span className="cursor-help text-xs text-gray-300">Bypasses Resistance</span>
+                </Tooltip>
+              }
+            />
+            {skill >= 50 && (
+              <span className="text-xs text-gray-600">Journeyman perk — bypass active</span>
+            )}
           </div>
-        )}
+        </div>
 
       </div>
 

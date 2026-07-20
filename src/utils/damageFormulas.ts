@@ -226,6 +226,7 @@ export interface HandToHandInputs {
   isPowerAttack: boolean;
   powerAttackType: 'normal' | 'standing';
   normalWeaponResistance: number; // opponent's Resist Normal Weapons %, 0–100
+  isSilverDaedricOrEnchanted: boolean; // enchanted gauntlets/bracers bypass resistance regardless of skill
 }
 
 export interface HandToHandResult {
@@ -235,7 +236,7 @@ export interface HandToHandResult {
   sneakMultiplier: number;
   powerAttackMultiplier: number;
   appliedMultiplier: number; // max(sneak, power) — only the higher applies
-  opponentWeaponResistance: number; // 1 if skill >= 50 (Journeyman bypasses), else (100 - resistance%) / 100
+  opponentWeaponResistance: number; // 1 if skill >= 50 (Journeyman) or isSilverDaedricOrEnchanted, else (100 - resistance%) / 100
   finalHealthDamage: number;
   finalFatigueDamage: number;
 }
@@ -277,13 +278,14 @@ export function calcHandToHandDamage(inputs: HandToHandInputs): HandToHandResult
   // Only the higher of sneak or power attack applies
   const appliedMultiplier = Math.max(sneakMultiplier, powerAttackMultiplier);
 
-  // Journeyman (skill >= 50) bypasses Resist Normal Weapons entirely.
-  // Below Journeyman, bare fists are treated as normal weapons and resistance applies.
+  // Resistance is bypassed if the attacker is Journeyman (skill >= 50) or wearing enchanted
+  // gauntlets/bracers (e.g. Hands of Midnight). Enchanted equipment bypasses resistance the
+  // same way Silver/Daedric/enchanted weapons do for conventional weapon attacks.
   // Source: https://en.uesp.net/wiki/Oblivion:Resist_Normal_Weapons
-  const journeymanOrHigher = clamp(inputs.skill, 0, 100) >= 50;
+  const bypassesResistance = clamp(inputs.skill, 0, 100) >= 50 || inputs.isSilverDaedricOrEnchanted;
   const opponentWeaponResistance = calcOpponentWeaponResistance(
     inputs.normalWeaponResistance,
-    journeymanOrHigher,
+    bypassesResistance,
   );
 
   // Damage is modified by fatigue, the applied attack multiplier, and weapon resistance
