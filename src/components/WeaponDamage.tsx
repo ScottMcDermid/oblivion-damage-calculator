@@ -114,6 +114,10 @@ export default function WeaponDamage({
     setBaseWeaponDamage(bow.baseDamage);
     if (resetCondition) setWeaponConditionPct(100);
     setBaseArrowDamage(arrow.baseDamage);
+    // Bypass resistance if either the bow or arrow material is Silver or Daedric
+    setIsSilverDaedricOrEnchanted(
+      materialBypassesResistance(bowMat) || materialBypassesResistance(arrowMat),
+    );
   };
 
   // ── Reset presets when weaponType prop changes from the top-bar ──
@@ -406,9 +410,6 @@ export default function WeaponDamage({
                 </div>
               )}
             </div>
-            <p className="mt-1 text-xs text-gray-600">
-              All bows bypass Resist Normal Weapons regardless of material.
-            </p>
             <Divider sx={{ my: 1.5, borderColor: '#2e2e2e' }} />
           </>
         )}
@@ -607,47 +608,57 @@ export default function WeaponDamage({
           tooltip="Sum of all armor pieces (each scaled by armor skill and condition). Hard-capped at 85."
         />
 
-        {!isBow && (
-          <div className="mt-2 space-y-1">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-              <StatInput
-                label="Normal Weapon Resistance"
-                value={normalWeaponResistance}
-                min={0}
-                max={100}
-                onChange={setNormalWeaponResistance}
-                showSlider={false}
-                suffix="%"
-                tooltip="Opponent's Resist Normal Weapons %. Has no effect when Bypasses Resistance is enabled."
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    size="small"
-                    checked={isSilverDaedricOrEnchanted}
-                    onChange={(e) => setIsSilverDaedricOrEnchanted(e.target.checked)}
-                    color="secondary"
-                  />
-                }
-                label={
-                  <Tooltip
-                    title="Silver, Daedric, and enchanted weapons bypass Resist Normal Weapons. Enable for any enchanted weapon regardless of material."
-                    arrow
-                  >
-                    <span className="cursor-help text-xs text-gray-300">Bypasses Resistance</span>
-                  </Tooltip>
-                }
-              />
-              {presetMaterial && (
+        <div className="mt-2 space-y-1">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+            <StatInput
+              label="Normal Weapon Resistance"
+              value={normalWeaponResistance}
+              min={0}
+              max={100}
+              onChange={setNormalWeaponResistance}
+              showSlider={false}
+              suffix="%"
+              tooltip="Opponent's Resist Normal Weapons %. Has no effect when Bypasses Resistance is enabled."
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={isSilverDaedricOrEnchanted}
+                  onChange={(e) => setIsSilverDaedricOrEnchanted(e.target.checked)}
+                  color="secondary"
+                />
+              }
+              label={
+                <Tooltip
+                  title="Silver, Daedric, and enchanted weapons (or arrows) bypass Resist Normal Weapons. Enable for any enchanted weapon regardless of material."
+                  arrow
+                >
+                  <span className="cursor-help text-xs text-gray-300">Bypasses Resistance</span>
+                </Tooltip>
+              }
+            />
+            {isBow ? (
+              <span className="text-xs text-gray-600">
+                {presetBowMaterial && materialBypassesResistance(presetBowMaterial as WeaponMaterial)
+                  ? `${presetBowMaterial} bow bypasses resistance`
+                  : presetArrowMaterial && materialBypassesResistance(presetArrowMaterial as WeaponMaterial)
+                    ? `${presetArrowMaterial} arrow bypasses resistance`
+                    : (presetBowMaterial || presetArrowMaterial)
+                      ? 'Neither bow nor arrow bypasses resistance'
+                      : null}
+              </span>
+            ) : (
+              presetMaterial && (
                 <span className="text-xs text-gray-600">
                   {materialBypassesResistance(presetMaterial as WeaponMaterial)
                     ? `${presetMaterial} bypasses resistance`
                     : `${presetMaterial} does not bypass resistance`}
                 </span>
-              )}
-            </div>
+              )
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* ── Result ── */}
