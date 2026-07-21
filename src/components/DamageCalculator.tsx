@@ -5,6 +5,11 @@ import {
   AppBar,
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   StyledEngineProvider,
   Tab,
   Tabs,
@@ -18,6 +23,7 @@ import { GiFist, GiSpikedMace } from 'react-icons/gi';
 import { TbArcheryArrow } from 'react-icons/tb';
 import { LuSword } from 'react-icons/lu';
 import { IoSettingsOutline } from 'react-icons/io5';
+import { VscDebugRestart } from 'react-icons/vsc';
 
 import theme from '@/app/theme';
 import WeaponDamage from '@/components/WeaponDamage';
@@ -68,6 +74,27 @@ export default function DamageCalculator() {
   const [difficulty, setDifficulty] = useState(0);
   const difficultyMultiplier = Math.pow(6, -difficulty / 100);
 
+  // Reset
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
+
+  const handleReset = () => {
+    // Reset all shared state to defaults
+    setIsSneaking(false);
+    setSneakSkill(25);
+    setStrength(50);
+    setLuck(50);
+    setCurrentFatigue(200);
+    setMaxFatigue(200);
+    setCombinedArmorRating(0);
+    setNormalWeaponResistance(0);
+    setIsRemastered(false);
+    setDifficulty(0);
+    // Increment key to remount child components, resetting their local state
+    setResetKey((k) => k + 1);
+    setIsResetOpen(false);
+  };
+
   const isWeapon = activeTab !== 'h2h';
   // Always derived from lastWeaponTab so weaponType never changes spuriously when H2H is active
   const weaponType = tabToWeaponType(lastWeaponTab);
@@ -115,6 +142,14 @@ export default function DamageCalculator() {
 
             <Button
               size="small"
+              onClick={() => setIsResetOpen(true)}
+              sx={{ gap: 0.5, fontSize: '0.8rem' }}
+            >
+              <VscDebugRestart className="text-base" />
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Reset</Box>
+            </Button>
+            <Button
+              size="small"
               onClick={() => setIsSettingsOpen(true)}
               sx={{ gap: 0.5, fontSize: '0.8rem' }}
             >
@@ -156,6 +191,7 @@ export default function DamageCalculator() {
           {/* WeaponDamage stays mounted to preserve state; hidden when H2H is active */}
           <div style={{ display: isWeapon ? undefined : 'none' }}>
             <WeaponDamage
+              key={resetKey}
               weaponType={weaponType}
               onWeaponTypeChange={handleWeaponTypeChange}
               isRemastered={isRemastered}
@@ -180,6 +216,7 @@ export default function DamageCalculator() {
           </div>
           <div style={{ display: isWeapon ? 'none' : undefined }}>
             <HandToHandDamage
+              key={resetKey}
               isRemastered={isRemastered}
               difficultyMultiplier={difficultyMultiplier}
               isSneaking={isSneaking}
@@ -266,6 +303,23 @@ export default function DamageCalculator() {
           difficulty={difficulty}
           onDifficultyChange={setDifficulty}
         />
+
+        <Dialog open={isResetOpen} onClose={() => setIsResetOpen(false)}>
+          <DialogTitle>Reset all values?</DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ fontSize: '0.875rem' }}>
+              This will reset all sliders and settings to their defaults.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsResetOpen(false)} size="small">
+              Cancel
+            </Button>
+            <Button onClick={handleReset} size="small" color="error" variant="contained">
+              Reset
+            </Button>
+          </DialogActions>
+        </Dialog>
       </ThemeProvider>
     </StyledEngineProvider>
   );
