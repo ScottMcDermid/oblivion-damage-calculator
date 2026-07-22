@@ -23,7 +23,7 @@ import { GiFist, GiSpikedMace } from 'react-icons/gi';
 import { TbArcheryArrow } from 'react-icons/tb';
 import { LuSword } from 'react-icons/lu';
 import { IoSettingsOutline } from 'react-icons/io5';
-import { VscDebugRestart } from 'react-icons/vsc';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 
 import theme from '@/app/theme';
 import WeaponDamage from '@/components/WeaponDamage';
@@ -142,15 +142,19 @@ export default function DamageCalculator() {
 
             <Button
               size="small"
+              color="error"
               onClick={() => setIsResetOpen(true)}
-              sx={{ gap: 0.5, fontSize: '0.8rem' }}
+              aria-label="Reset calculator"
+              sx={{ minWidth: 0, px: { xs: '6px', sm: undefined } }}
             >
-              <VscDebugRestart className="text-base" />
-              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Reset</Box>
+              <RestartAltIcon fontSize="small" />
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' }, ml: 0.5 }}>Reset</Box>
             </Button>
             <Button
+              variant="contained"
               size="small"
               onClick={() => setIsSettingsOpen(true)}
+              aria-label="Open settings"
               sx={{ gap: 0.5, fontSize: '0.8rem' }}
             >
               <IoSettingsOutline className="text-base" />
