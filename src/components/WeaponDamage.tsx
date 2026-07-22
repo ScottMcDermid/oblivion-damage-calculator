@@ -5,6 +5,7 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
+  ListSubheader,
   MenuItem,
   Select,
   Switch,
@@ -17,14 +18,17 @@ import StatInput from '@/components/StatInput';
 import ResultDisplay from '@/components/ResultDisplay';
 import { calcWeaponDamage, type WeaponType } from '@/utils/damageFormulas';
 import {
-  MATERIALS,
-  BLADE_SUBTYPES,
-  BLUNT_SUBTYPES,
+  BASE_MATERIALS,
+  AMBER_MATERIALS,
+  MADNESS_MATERIALS,
+  getAvailableBladeSubtypes,
+  getAvailableBluntSubtypes,
   getPreset,
   getBowPreset,
   getArrowPreset,
   subtypeIsTwoHanded,
   materialBypassesResistance,
+  isSIMaterial,
   type WeaponMaterial,
   type WeaponSubtype,
 } from '@/utils/weaponPresets';
@@ -129,10 +133,26 @@ export default function WeaponDamage({
   // ── Preset application helpers ──
 
   const applyMeleePreset = (subtype: WeaponSubtype | '', material: WeaponMaterial | '', resetCondition = true) => {
-    setPresetSubtype(subtype);
+    // If an SI material is chosen, the subtype may not be valid for it — auto-pick the first valid one
+    let resolvedSubtype = subtype;
+    if (material && subtype) {
+      const availableBlade = getAvailableBladeSubtypes(material);
+      const availableBlunt = getAvailableBluntSubtypes(material);
+      const allAvailable = [...availableBlade, ...availableBlunt];
+      if (allAvailable.length > 0 && !allAvailable.includes(subtype as WeaponSubtype)) {
+        // Pick first available subtype for the current weapon type tab
+        const isCurBlunt = weaponType === 'Blunt';
+        resolvedSubtype = isCurBlunt && availableBlunt.length > 0
+          ? availableBlunt[0]
+          : availableBlade.length > 0
+            ? availableBlade[0]
+            : availableBlunt[0] ?? '';
+      }
+    }
+    setPresetSubtype(resolvedSubtype);
     setPresetMaterial(material);
-    if (!subtype || !material) return;
-    const p = getPreset(material, subtype);
+    if (!resolvedSubtype || !material) return;
+    const p = getPreset(material, resolvedSubtype as WeaponSubtype);
     if (!p) return;
     setBaseWeaponDamage(p.baseDamage);
     if (resetCondition) setWeaponConditionPct(100);
@@ -299,12 +319,26 @@ export default function WeaponDamage({
 
   // ── Preset summary helpers ──
 
+  // Shivering Isles weapons have lore names that differ from the generic subtype labels
+  const getSIWeaponName = (material: WeaponMaterial, subtype: WeaponSubtype): string => {
+    if (isSIMaterial(material)) {
+      // Amber: Longsword → Sword, Warhammer → Hammer
+      if ((AMBER_MATERIALS as string[]).includes(material)) {
+        if (subtype === 'Longsword') return 'Sword';
+        if (subtype === 'Warhammer') return 'Hammer';
+      }
+      // Madness: subtype names match in-game (Longsword, Claymore, War Axe)
+    }
+    return subtype;
+  };
+
   const meleeSummary = (() => {
     if (!presetSubtype || !presetMaterial) return null;
-    const p = getPreset(presetMaterial, presetSubtype);
+    const p = getPreset(presetMaterial, presetSubtype as WeaponSubtype);
     if (!p) return null;
+    const weaponName = getSIWeaponName(presetMaterial, presetSubtype as WeaponSubtype);
     return {
-      label: `${presetMaterial} ${presetSubtype}`,
+      label: `${presetMaterial} ${weaponName}`,
       detail: `Base damage: ${p.baseDamage}`,
       warn: p.bypassesResistance,
     };
@@ -317,6 +351,7 @@ export default function WeaponDamage({
     return {
       label: `${presetBowMaterial} Bow + ${presetArrowMaterial} Arrow`,
       detail: `Base: ${bow.baseDamage} + ${arrow.baseDamage} = ${bow.baseDamage + arrow.baseDamage} combined`,
+      isSI: isSIMaterial(presetBowMaterial) || isSIMaterial(presetArrowMaterial),
     };
   })();
 
@@ -344,7 +379,10 @@ export default function WeaponDamage({
                       Custom
                     </MenuItem>
                     <Divider />
-                    {(weaponType === 'Blade' ? BLADE_SUBTYPES : BLUNT_SUBTYPES).map((s) => (
+                    {(weaponType === 'Blade'
+                      ? getAvailableBladeSubtypes(presetMaterial || 'Iron')
+                      : getAvailableBluntSubtypes(presetMaterial || 'Iron')
+                    ).map((s) => (
                       <MenuItem key={s} value={s} sx={{ fontSize: '0.8rem' }}>{s}</MenuItem>
                     ))}
                   </Select>
@@ -353,7 +391,7 @@ export default function WeaponDamage({
 
               <div>
                 <div className="mb-1 text-xs text-gray-500">Material</div>
-                <FormControl size="small" sx={{ minWidth: 130 }}>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
                   <Select
                     value={presetMaterial}
                     displayEmpty
@@ -364,7 +402,19 @@ export default function WeaponDamage({
                       Custom
                     </MenuItem>
                     <Divider />
-                    {MATERIALS.map((m) => (
+                    {BASE_MATERIALS.map((m) => (
+                      <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m}</MenuItem>
+                    ))}
+                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem', color: 'text.disabled' }}>
+                      Shivering Isles — Amber
+                    </ListSubheader>
+                    {AMBER_MATERIALS.map((m) => (
+                      <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m}</MenuItem>
+                    ))}
+                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem', color: 'text.disabled' }}>
+                      Shivering Isles — Madness
+                    </ListSubheader>
+                    {MADNESS_MATERIALS.map((m) => (
                       <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m}</MenuItem>
                     ))}
                   </Select>
@@ -394,7 +444,7 @@ export default function WeaponDamage({
             <div className="flex flex-wrap items-start gap-3">
               <div>
                 <div className="mb-1 text-xs text-gray-500">Bow</div>
-                <FormControl size="small" sx={{ minWidth: 140 }}>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
                   <Select
                     value={presetBowMaterial}
                     displayEmpty
@@ -409,7 +459,19 @@ export default function WeaponDamage({
                       Custom
                     </MenuItem>
                     <Divider />
-                    {MATERIALS.map((m) => (
+                    {BASE_MATERIALS.map((m) => (
+                      <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Bow</MenuItem>
+                    ))}
+                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem', color: 'text.disabled' }}>
+                      Shivering Isles — Amber
+                    </ListSubheader>
+                    {AMBER_MATERIALS.map((m) => (
+                      <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Bow</MenuItem>
+                    ))}
+                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem', color: 'text.disabled' }}>
+                      Shivering Isles — Madness
+                    </ListSubheader>
+                    {MADNESS_MATERIALS.map((m) => (
                       <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Bow</MenuItem>
                     ))}
                   </Select>
@@ -418,7 +480,7 @@ export default function WeaponDamage({
 
               <div>
                 <div className="mb-1 text-xs text-gray-500">Arrow</div>
-                <FormControl size="small" sx={{ minWidth: 140 }}>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
                   <Select
                     value={presetArrowMaterial}
                     displayEmpty
@@ -433,7 +495,19 @@ export default function WeaponDamage({
                       Custom
                     </MenuItem>
                     <Divider />
-                    {MATERIALS.map((m) => (
+                    {BASE_MATERIALS.map((m) => (
+                      <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Arrow</MenuItem>
+                    ))}
+                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem', color: 'text.disabled' }}>
+                      Shivering Isles — Amber
+                    </ListSubheader>
+                    {AMBER_MATERIALS.map((m) => (
+                      <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Arrow</MenuItem>
+                    ))}
+                    <ListSubheader sx={{ fontSize: '0.7rem', lineHeight: '2rem', color: 'text.disabled' }}>
+                      Shivering Isles — Madness
+                    </ListSubheader>
+                    {MADNESS_MATERIALS.map((m) => (
                       <MenuItem key={m} value={m} sx={{ fontSize: '0.8rem' }}>{m} Arrow</MenuItem>
                     ))}
                   </Select>
