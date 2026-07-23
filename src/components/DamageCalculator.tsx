@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
   AppBar,
   Box,
@@ -53,56 +52,26 @@ function weaponTypeToTab(wt: WeaponType): ActiveTab {
   return 'blade';
 }
 
-const ODC_KEYS = [
-  'odc_activeTab',
-  'odc_isSneaking',
-  'odc_sneakSkill',
-  'odc_strength',
-  'odc_luck',
-  'odc_currentFatigue',
-  'odc_maxFatigue',
-  'odc_combinedArmorRating',
-  'odc_normalWeaponResistance',
-  'odc_isRemastered',
-  'odc_difficulty',
-  'odc_presetSubtype',
-  'odc_presetMaterial',
-  'odc_presetBowMaterial',
-  'odc_presetArrowMaterial',
-  'odc_baseWeaponDamage',
-  'odc_baseArrowDamage',
-  'odc_weaponConditionPct',
-  'odc_agility',
-  'odc_weaponSkill',
-  'odc_weaponIsPowerAttack',
-  'odc_weaponPowerAttackType',
-  'odc_weaponBypassesResistance',
-  'odc_h2hSkill',
-  'odc_h2hIsPowerAttack',
-  'odc_h2hPowerAttackType',
-  'odc_h2hBypassesResistance',
-] as const;
-
 export default function DamageCalculator() {
-  const [activeTab, setActiveTab] = useLocalStorage<ActiveTab>('odc_activeTab', 'blade');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('blade');
   const [lastWeaponTab, setLastWeaponTab] = useState<Exclude<ActiveTab, 'h2h'>>('blade');
 
   // Shared character stats — same character across all attack types
-  const [isSneaking, setIsSneaking] = useLocalStorage('odc_isSneaking', false);
-  const [sneakSkill, setSneakSkill] = useLocalStorage('odc_sneakSkill', 25);
-  const [strength, setStrength] = useLocalStorage('odc_strength', 50);
-  const [luck, setLuck] = useLocalStorage('odc_luck', 50);
-  const [currentFatigue, setCurrentFatigue] = useLocalStorage('odc_currentFatigue', 200);
-  const [maxFatigue, setMaxFatigue] = useLocalStorage('odc_maxFatigue', 200);
+  const [isSneaking, setIsSneaking] = useState(false);
+  const [sneakSkill, setSneakSkill] = useState(25);
+  const [strength, setStrength] = useState(50);
+  const [luck, setLuck] = useState(50);
+  const [currentFatigue, setCurrentFatigue] = useState(200);
+  const [maxFatigue, setMaxFatigue] = useState(200);
 
   // Shared opponent stats — same opponent across all attack types
-  const [combinedArmorRating, setCombinedArmorRating] = useLocalStorage('odc_combinedArmorRating', 0);
-  const [normalWeaponResistance, setNormalWeaponResistance] = useLocalStorage('odc_normalWeaponResistance', 0);
+  const [combinedArmorRating, setCombinedArmorRating] = useState(0);
+  const [normalWeaponResistance, setNormalWeaponResistance] = useState(0);
 
   // Settings
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isRemastered, setIsRemastered] = useLocalStorage('odc_isRemastered', false);
-  const [difficulty, setDifficulty] = useLocalStorage('odc_difficulty', 0);
+  const [isRemastered, setIsRemastered] = useState(false);
+  const [difficulty, setDifficulty] = useState(0);
   const difficultyMultiplier = Math.pow(6, -difficulty / 100);
 
   // Reset
@@ -110,8 +79,6 @@ export default function DamageCalculator() {
   const [resetKey, setResetKey] = useState(0);
 
   const handleReset = () => {
-    // Clear all persisted keys so child components reinitialise to defaults on remount
-    ODC_KEYS.forEach((k) => window.localStorage.removeItem(k));
     // Reset all shared state to defaults
     setIsSneaking(false);
     setSneakSkill(25);
