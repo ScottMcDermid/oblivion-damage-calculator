@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
   Divider,
   FormControl,
@@ -103,32 +104,29 @@ export default function WeaponDamage({
 }: WeaponDamageProps) {
 
   // ── Melee preset state ──
-  const [presetSubtype, setPresetSubtype] = useState<WeaponSubtype | ''>(DEFAULT_BLADE_SUBTYPE);
-  const [presetMaterial, setPresetMaterial] = useState<WeaponMaterial | ''>(DEFAULT_MATERIAL);
+  const [presetSubtype, setPresetSubtype] = useLocalStorage<WeaponSubtype | ''>('odc_presetSubtype', DEFAULT_BLADE_SUBTYPE);
+  const [presetMaterial, setPresetMaterial] = useLocalStorage<WeaponMaterial | ''>('odc_presetMaterial', DEFAULT_MATERIAL);
 
   // ── Bow/arrow preset state ──
-  const [presetBowMaterial, setPresetBowMaterial] = useState<WeaponMaterial | ''>(DEFAULT_MATERIAL);
-  const [presetArrowMaterial, setPresetArrowMaterial] = useState<WeaponMaterial | ''>(DEFAULT_MATERIAL);
+  const [presetBowMaterial, setPresetBowMaterial] = useLocalStorage<WeaponMaterial | ''>('odc_presetBowMaterial', DEFAULT_MATERIAL);
+  const [presetArrowMaterial, setPresetArrowMaterial] = useLocalStorage<WeaponMaterial | ''>('odc_presetArrowMaterial', DEFAULT_MATERIAL);
 
   // ── Weapon stats ──
-  const [baseWeaponDamage, setBaseWeaponDamage] = useState(() => {
-    const p = getPreset(DEFAULT_MATERIAL, DEFAULT_BLADE_SUBTYPE);
-    return p?.baseDamage ?? 10;
-  });
-  const [baseArrowDamage, setBaseArrowDamage] = useState(() => getArrowPreset(DEFAULT_MATERIAL).baseDamage);
-  const [weaponConditionPct, setWeaponConditionPct] = useState(100);
+  const [baseWeaponDamage, setBaseWeaponDamage] = useLocalStorage('odc_baseWeaponDamage', getPreset(DEFAULT_MATERIAL, DEFAULT_BLADE_SUBTYPE)?.baseDamage ?? 10);
+  const [baseArrowDamage, setBaseArrowDamage] = useLocalStorage('odc_baseArrowDamage', getArrowPreset(DEFAULT_MATERIAL).baseDamage);
+  const [weaponConditionPct, setWeaponConditionPct] = useLocalStorage('odc_weaponConditionPct', 100);
 
   // ── Attacker stats ──
   // strength and luck are shared props (same character); agility is bow-only and stays local
-  const [agility, setAgility] = useState(50);
-  const [skill, setSkill] = useState(25);
+  const [agility, setAgility] = useLocalStorage('odc_agility', 50);
+  const [skill, setSkill] = useLocalStorage('odc_weaponSkill', 25);
 
   // ── Attack modifiers ──
-  const [isPowerAttack, setIsPowerAttack] = useState(false);
-  const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
+  const [isPowerAttack, setIsPowerAttack] = useLocalStorage('odc_weaponIsPowerAttack', false);
+  const [powerAttackType, setPowerAttackType] = useLocalStorage<'normal' | 'standing'>('odc_weaponPowerAttackType', 'normal');
 
   // ── Opponent ──
-  const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useState(false);
+  const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useLocalStorage('odc_weaponBypassesResistance', false);
 
   // ── Preset application helpers ──
 

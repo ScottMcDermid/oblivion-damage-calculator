@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
   FormControlLabel,
   Switch,
@@ -71,10 +72,10 @@ export default function HandToHandDamage({
   normalWeaponResistance,
   onNormalWeaponResistanceChange,
 }: HandToHandDamageProps) {
-  const [skill, setSkill] = useState(25);
-  const [isPowerAttack, setIsPowerAttack] = useState(false);
-  const [powerAttackType, setPowerAttackType] = useState<'normal' | 'standing'>('normal');
-  const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useState(false);
+  const [skill, setSkill] = useLocalStorage('odc_h2hSkill', 25);
+  const [isPowerAttack, setIsPowerAttack] = useLocalStorage('odc_h2hIsPowerAttack', false);
+  const [powerAttackType, setPowerAttackType] = useLocalStorage<'normal' | 'standing'>('odc_h2hPowerAttackType', 'normal');
+  const [isSilverDaedricOrEnchanted, setIsSilverDaedricOrEnchanted] = useLocalStorage('odc_h2hBypassesResistance', false);
   const wasManuallyEnabled = useRef(false);
 
   // Auto-toggle Bypasses Resistance when H2H skill crosses the Journeyman threshold (≥ 50).
@@ -86,7 +87,9 @@ export default function HandToHandDamage({
     } else if (!wasManuallyEnabled.current) {
       setIsSilverDaedricOrEnchanted(false);
     }
-  }, [skill]);
+  // setIsSilverDaedricOrEnchanted is stable (useCallback in useLocalStorage)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skill, setIsSilverDaedricOrEnchanted]);
 
   const hasMasterSneakPerk = isSneaking && sneakSkill >= 100;
 
