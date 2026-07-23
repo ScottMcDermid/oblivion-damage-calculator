@@ -175,21 +175,7 @@ export default function WeaponDamage({
   };
 
   // ── Reset presets when weaponType prop changes from the top-bar ──
-  const prevWeaponType = useRef<WeaponType>(
-    (() => {
-      if (typeof window === 'undefined') return weaponType;
-      try {
-        const tab = JSON.parse(
-          window.localStorage.getItem('odc_lastWeaponTab') ?? '"blade"',
-        ) as 'blade' | 'blunt' | 'bow';
-        if (tab === 'blunt') return 'Blunt';
-        if (tab === 'bow') return 'Bow';
-        return 'Blade';
-      } catch {
-        return weaponType;
-      }
-    })()
-  );
+  const prevWeaponType = useRef(weaponType);
   useEffect(() => {
     if (weaponType === prevWeaponType.current) return;
     prevWeaponType.current = weaponType;
