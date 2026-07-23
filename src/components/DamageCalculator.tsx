@@ -55,6 +55,7 @@ function weaponTypeToTab(wt: WeaponType): ActiveTab {
 
 const ODC_KEYS = [
   'odc_activeTab',
+  'odc_lastWeaponTab',
   'odc_isSneaking',
   'odc_sneakSkill',
   'odc_strength',
@@ -85,7 +86,7 @@ const ODC_KEYS = [
 
 export default function DamageCalculator() {
   const [activeTab, setActiveTab] = useLocalStorage<ActiveTab>('odc_activeTab', 'blade');
-  const [lastWeaponTab, setLastWeaponTab] = useState<Exclude<ActiveTab, 'h2h'>>('blade');
+  const [lastWeaponTab, setLastWeaponTab] = useLocalStorage<Exclude<ActiveTab, 'h2h'>>('odc_lastWeaponTab', 'blade');
 
   // Shared character stats — same character across all attack types
   const [isSneaking, setIsSneaking] = useLocalStorage('odc_isSneaking', false);
